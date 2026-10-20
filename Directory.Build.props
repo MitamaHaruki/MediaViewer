@@ -10,5 +10,7 @@
     <Authors>三玉春樹 / はるたまプロジェクト</Authors>
     <Copyright>Copyright (C) 2026 三玉春樹 / はるたまプロジェクト</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <!-- 自動更新の配信元（GitHub の 所有者/リポジトリ、仕様 §10.1）。空にすると更新機能を無効にしてビルドする -->
+    <UpdateRepository>MitamaHaruki/MediaViewer</UpdateRepository>
   </PropertyGroup>
 </Project>

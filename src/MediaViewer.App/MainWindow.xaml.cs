@@ -86,6 +86,7 @@ public sealed partial class MainWindow : Window
         };
         ControlBar.SizeChanged += (_, _) => UpdateCompactLayout();
         ApplySettings(settings);
+        InitializeUpdates();
         UpdateUi();
     }
 

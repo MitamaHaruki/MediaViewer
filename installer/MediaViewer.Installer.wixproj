@@ -1,0 +1,30 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <!--
+    MSI インストーラー。リリース用のワークフローで、発行フォルダ（PublishDir）を指定してビルドする：
+      dotnet build installer/MediaViewer.Installer.wixproj -c Release -p:Version=1.2.3 -p:PublishDir=<発行フォルダ>\
+    発行フォルダには、アプリ本体・更新プログラム（MediaViewer.Updater.exe）・ffmpeg フォルダを入れておく。
+    WiX は v6 以降で利用条件が変わったため、v5 系を使う。
+  -->
+  <PropertyGroup>
+    <OutputName>MediaViewer-$(Version)-x64</OutputName>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <Cultures>ja-JP</Cultures>
+    <PublishDir Condition="'$(PublishDir)' == ''">..\artifacts\publish\</PublishDir>
+    <PublishDir Condition="!HasTrailingSlash('$(PublishDir)')">$(PublishDir)\</PublishDir>
+    <DefineConstants>Version=$(Version);PublishDir=$(PublishDir)</DefineConstants>
+    <!--
+      除外する検査：
+      ・ICE03：同梱 DLL の一部はバージョン情報に複数の言語を持ち、File 表の Language 列の検査に通らない。
+      ・ICE43／ICE57：スタートメニューを利用者ごとのフォルダとみなす検査。このパッケージは全ユーザー共通
+        （ALLUSERS=1）でインストールし、ショートカットは全ユーザーのスタートメニューに入るため当てはまらない。
+    -->
+    <SuppressIces>ICE03;ICE43;ICE57</SuppressIces>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+</Project>

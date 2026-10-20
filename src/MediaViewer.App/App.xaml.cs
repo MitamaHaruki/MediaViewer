@@ -1,3 +1,4 @@
+using MediaViewer.App.Services;
 using MediaViewer.Core.Diagnostics;
 using MediaViewer.Core.Settings;
 using Microsoft.UI.Xaml;
@@ -26,6 +27,12 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        if (Environment.GetCommandLineArgs().Skip(1).Contains(HealthCheck.Argument))
+        {
+            Environment.Exit(HealthCheck.Run());
+            return;
+        }
+
         var store = SettingsStore.CreateDefault();
         _window = new MainWindow(store, store.Load());
         _window.Activate();

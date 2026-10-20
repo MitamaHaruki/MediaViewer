@@ -1,0 +1,126 @@
+# リリース（仕様 §10.4）。v1.2.3 形式のタグを push すると、インストーラー（MSI）を作って署名し、
+# GitHub Release（安定版）として公開する。アプリの自動更新はこのリリースを取得する。
+# 手動実行（workflow_dispatch）では公開せず、MSI を成果物として保存するだけ（動作確認用）。
+name: リリース
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 試しに作るバージョン番号（x.y.z）。リリースは作らない
+        required: true
+        default: "0.0.1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # 同梱する FFmpeg（FFmpeg ビルドのワークフローが作るプレリリース）
+  FFMPEG_TAG: ffmpeg-9.0.2-mv1
+  FFMPEG_PACKAGE: ffmpeg-9.0.2-mv1-win64
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: バージョン番号を決める
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.Substring(1) } else { '${{ github.event.inputs.version }}' }
+          if ($v -notmatch '^\d+\.\d+\.\d+$') { throw "バージョン番号は x.y.z の形式にしてください：$v" }
+          "VERSION=$v" >> $env:GITHUB_ENV
+          "MSI=MediaViewer-$v-x64.msi" >> $env:GITHUB_ENV
+
+      - name: FFmpeg を取得して確認
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download $env:FFMPEG_TAG --pattern "$env:FFMPEG_PACKAGE.zip*" --dir ffmpeg-dl
+          $expected = (Get-Content "ffmpeg-dl/$env:FFMPEG_PACKAGE.zip.sha256" -Raw).Split(' ')[0].Trim()
+          $actual = (Get-FileHash "ffmpeg-dl/$env:FFMPEG_PACKAGE.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($expected -ne $actual) { throw "FFmpeg のハッシュ値が一致しません" }
+          Expand-Archive "ffmpeg-dl/$env:FFMPEG_PACKAGE.zip" -DestinationPath ffmpeg-dl
+
+      # 同梱する FFmpeg で変換の結合テストも行う
+      - name: テスト
+        shell: pwsh
+        run: |
+          $env:MEDIAVIEWER_FFMPEG_DIR = Resolve-Path "ffmpeg-dl/$env:FFMPEG_PACKAGE"
+          dotnet test tests/MediaViewer.Tests/MediaViewer.Tests.csproj -c Release -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { throw 'テストに失敗しました。' }
+
+      - name: 発行（アプリ本体・更新プログラム・FFmpeg）
+        shell: pwsh
+        run: ./build/publish.ps1 -Version $env:VERSION -Output artifacts/publish -FfmpegDir "ffmpeg-dl/$env:FFMPEG_PACKAGE"
+
+      - name: 起動確認
+        shell: pwsh
+        run: |
+          $env:MEDIAVIEWER_SETTINGS_PATH = Join-Path $env:RUNNER_TEMP 'settings.json'
+          $p = Start-Process artifacts/publish/MediaViewer.exe -ArgumentList '--health-check' -PassThru -Wait
+          Get-ChildItem "$env:LOCALAPPDATA/MediaViewer/logs" -Filter *.log | Get-Content
+          if ($p.ExitCode -ne 0) { throw "起動確認に失敗しました（終了コード $($p.ExitCode)）" }
+
+      - name: インストーラー（MSI）を作成
+        shell: pwsh
+        run: |
+          dotnet build installer/MediaViewer.Installer.wixproj -c Release -p:Version=$env:VERSION -p:PublishDir="$env:GITHUB_WORKSPACE\artifacts\publish\"
+          if ($LASTEXITCODE -ne 0) { throw 'MSI の作成に失敗しました。' }
+          New-Item -ItemType Directory -Force artifacts/release | Out-Null
+          Copy-Item "installer/bin/Release/$env:MSI" artifacts/release/
+
+      # 秘密鍵は Secrets から環境変数で渡し、ファイルにもログにも書かない。署名後、アプリに埋め込んだ公開鍵で確かめる
+      - name: 署名
+        shell: pwsh
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          dotnet run --project tools/ReleaseSigner -c Release -- sign --file "artifacts/release/$env:MSI" --version $env:VERSION --key-env UPDATE_SIGNING_KEY
+          if ($LASTEXITCODE -ne 0) { throw '署名に失敗しました。' }
+          Get-FileHash artifacts/release/* -Algorithm SHA256 | Format-Table -AutoSize
+
+      - name: 成果物を保存
+        uses: actions/upload-artifact@v7
+        with:
+          name: MediaViewer-${{ env.VERSION }}-x64
+          path: artifacts/release/
+
+      # 下書きでアセットをすべて添付してから公開する（添付の途中の状態を自動更新が拾わないように）
+      - name: GitHub Release を公開
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $message = (git for-each-ref "refs/tags/$tag" --format='%(contents)') -join "`n"
+          if ([string]::IsNullOrWhiteSpace($message)) { $message = '（変更内容はコミット履歴を参照してください）' }
+          $notes = @"
+          $message
+
+          ---
+          ### インストール
+          ``$env:MSI`` をダウンロードして実行してください（Windows 11 24H2 以降、x64）。全ユーザー共通で C:\Program Files\MediaViewer にインストールされ、管理者権限の確認が表示されます。
+
+          インストール済みの場合は、アプリが自動で新しいバージョンを確認し、終了時に更新します（設定 → 更新設定 で変更できます）。
+
+          コード署名証明書を使っていないため、ダウンロードや初回の実行時に Microsoft Defender SmartScreen の警告が表示されることがあります。その場合は「詳細情報」→「実行」を選んでください。``.sig`` は自動更新で改ざんを検出するための署名ファイルです。
+          "@
+          $notesFile = Join-Path $env:RUNNER_TEMP 'notes.md'
+          Set-Content $notesFile $notes -Encoding utf8
+          gh release create $tag --draft --verify-tag --title "メディアビューワー $env:VERSION" --notes-file $notesFile "artifacts/release/$env:MSI" "artifacts/release/$env:MSI.sig"
+          gh release edit $tag --draft=false --latest

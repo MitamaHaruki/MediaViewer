@@ -4,7 +4,7 @@
 本ソフトウェア本体は GNU General Public License v3.0 以降で提供されます（LICENSE を参照）。
 Windows App SDK とのリンクについて、GPLv3 第7条に基づく追加許可を付しています（LICENSE-ADDITIONAL-PERMISSION.txt を参照）。
 本ソフトウェアには以下の外部ライブラリが含まれます。各ライブラリはそれぞれのライセンスに従います。
-（開発中のため、配布前に各ライセンス全文の同梱と内容の最終確認を行います。）
+MIT／BSD 等の短いライセンスは各配布元の条文に従い、FFmpeg と依存ライブラリのライセンス文は ffmpeg\licenses フォルダに同梱しています。
 
 ------------------------------------------------------------
 .NET Runtime
@@ -47,3 +47,20 @@ SharpGen.Runtime
   著作権者: SharpGenTools contributors
   ライセンス: MIT License
   https://github.com/SharpGenTools/SharpGenTools
+
+FFmpeg（変換用の ffmpeg.exe / ffprobe.exe。インストール先の ffmpeg フォルダ）
+  メディアビューワー用に必要な機能だけを有効にしてビルドしたもの（ビルド手順は build/ffmpeg）
+  ライセンス: GNU General Public License v2 以降（--enable-gpl）
+  https://ffmpeg.org/
+  ソース: 本プロジェクトの GitHub Releases の「FFmpeg ビルド」（ffmpeg-*-mv*）に、FFmpeg と
+          同梱ライブラリのソースを添付しています。
+  同梱の依存ライブラリ: x264（GPL v2 以降）、libvpx（BSD 3-Clause）、Opus（BSD 3-Clause）、
+  LAME（LGPL v2 以降）、libvorbis・libogg（BSD 3-Clause）、libwebp（BSD 3-Clause）、
+  dav1d（BSD 2-Clause）、zlib（zlib License）、bzip2（bzip2 License）、libiconv（LGPL v2.1 以降）、
+  MinGW-w64 の実行時ライブラリ（GCC Runtime Library Exception 付き GPL v3、winpthreads は MIT 系）
+  各ライブラリのライセンス文と版は ffmpeg\licenses フォルダ（FFMPEG-BUILD-INFO.txt）を参照してください。
+
+WiX Toolset（インストーラーの画面と処理の一部。インストーラー内に含まれる）
+  著作権者: .NET Foundation and contributors
+  ライセンス: Microsoft Reciprocal License (MS-RL)
+  https://wixtoolset.org/ / https://github.com/wixtoolset/wix

@@ -60,7 +60,7 @@ public sealed partial class MainWindow
         }
     }
 
-    private void OnExitClick(object sender, RoutedEventArgs e) => Close();
+    private void OnExitClick(object sender, RoutedEventArgs e) => RequestClose();
 
     private ConversionWindow? _conversionWindow;
 

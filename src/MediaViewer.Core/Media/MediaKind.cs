@@ -47,6 +47,9 @@ public static class MediaKinds
         [".opus"] = MediaKind.Audio,
     }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>対応する拡張子と種別の一覧（インストーラーのファイルの関連付けと一致させる）。</summary>
+    public static IReadOnlyDictionary<string, MediaKind> Extensions => ByExtension;
+
     public static MediaKind FromPath(string path)
     {
         var ext = Path.GetExtension(path);

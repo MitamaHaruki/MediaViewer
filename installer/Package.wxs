@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  メディアビューワーのインストーラー（仕様決定事項 D10）。
+  ・全ユーザー共通で C:\Program Files\MediaViewer\ にインストールする（管理者権限が必要）。
+  ・更新は新しい版の MSI を上書きインストールする（メジャーアップグレード）。旧版の削除と新しい版の導入を
+    1つのトランザクションで行うため、途中で失敗すると Windows Installer が旧版の状態へ巻き戻す。
+  ・起動確認に失敗したとき更新プログラムが直前の版へ戻せるよう、古い版のインストール（ダウングレード）も許可する。
+  ・利用者の設定（%LocalAppData%\MediaViewer）はインストール先と分け、更新・アンインストールで消さない。
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="メディアビューワー"
+           Manufacturer="はるたまプロジェクト"
+           Version="$(Version)"
+           UpgradeCode="{320A2E43-F6C6-49C8-B1F3-4B93B354CBC8}"
+           Scope="perMachine"
+           Language="1041"
+           Codepage="932"
+           Compressed="yes">
+
+    <SummaryInformation Description="メディアビューワー $(Version) インストーラー" Codepage="932" />
+
+    <MajorUpgrade Schedule="afterInstallInitialize" AllowDowngrades="yes" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- 「アプリと機能」の表示 -->
+    <Icon Id="AppIcon.ico" SourceFile="..\src\MediaViewer.App\Assets\AppIcon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/MitamaHaruki/MediaViewer" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/MitamaHaruki/MediaViewer" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/MitamaHaruki/MediaViewer/releases" />
+    <Property Id="ARPCONTACT" Value="三玉春樹 / はるたまプロジェクト（https://x.com/MitamaHaruki）" />
+    <!-- 「変更」は WixUI が無効にする（ARPNOMODIFY）。修復は設けない -->
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <!-- インストール先。前回のインストール先を覚えておき、更新でも同じ場所へ入れる -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="MediaViewer" />
+    </StandardDirectory>
+    <Property Id="INSTALLFOLDER">
+      <RegistrySearch Id="PreviousInstallFolder" Root="HKLM" Key="Software\HarutamaProject\MediaViewer" Name="InstallDir" Type="raw" />
+    </Property>
+
+    <Feature Id="Main" Title="メディアビューワー" Level="1" AllowAbsent="no">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentGroupRef Id="FileAssociations" />
+      <ComponentRef Id="InstallDirRegistry" />
+    </Feature>
+
+    <!-- アプリ本体と同梱物（発行フォルダの中身すべて） -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable">
+        <File Id="MainExe" Source="$(PublishDir)MediaViewer.exe" KeyPath="yes">
+          <Shortcut Id="AppShortcut"
+                    Directory="ProgramMenuFolder"
+                    Name="メディアビューワー"
+                    Description="写真・動画・音声のビューワー"
+                    WorkingDirectory="INSTALLFOLDER" />
+        </File>
+      </Component>
+      <Files Include="$(PublishDir)**">
+        <Exclude Files="$(PublishDir)MediaViewer.exe" />
+        <Exclude Files="$(PublishDir)**\*.pdb" />
+      </Files>
+    </ComponentGroup>
+
+    <Component Id="InstallDirRegistry" Directory="INSTALLFOLDER">
+      <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer" Name="InstallDir" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+    </Component>
+
+    <!-- スタートメニューのショートカット（アプリ本体の部品に含める） -->
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <!-- 画面：ようこそ → ライセンス → インストール先 → 確認 → 完了（完了時にアプリを起動できる） -->
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="メディアビューワーを起動する" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <Property Id="WixShellExecTarget" Value="[#MainExe]" />
+    <CustomAction Id="LaunchApplication" BinaryRef="Wix4UtilCA_X64" DllEntry="WixShellExec" Impersonate="yes" />
+    <UI>
+      <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+  </Package>
+</Wix>

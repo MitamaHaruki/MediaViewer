@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- リリース用の更新ファイル（MSI）に署名する・署名を確かめるツール（仕様決定事項 D11）。配布物には含めない。 -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MediaViewer.Core\MediaViewer.Core.csproj" />
+  </ItemGroup>
+
+</Project>

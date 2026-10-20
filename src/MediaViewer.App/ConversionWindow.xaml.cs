@@ -27,6 +27,9 @@ public sealed partial class ConversionWindow : Window
     private CancellationTokenSource? _convertCts;
     private Task? _conversionTask;
     private bool _converting;
+
+    /// <summary>変換を実行中か（更新のための再起動で中断させないため）。</summary>
+    public bool IsConverting => _converting;
     private bool _closeAfterCancel;
     private string? _lastOutput;
 

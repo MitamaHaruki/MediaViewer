@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ファイルの関連付け（仕様 §3.2）。「プログラムから開く」と「既定のアプリ」の候補に登録するだけで、
+  既定のアプリを勝手に変更しない（Windows の方針どおり、利用者が設定で選ぶ）。
+  拡張子の一覧は MediaViewer.Core の MediaKinds と一致させる（単体テストで確認）。
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    <ComponentGroup Id="FileAssociations" Directory="INSTALLFOLDER">
+
+      <!-- 画像 -->
+      <Component Id="ProgIdImage" Guid="*">
+        <RegistryKey Root="HKLM" Key="Software\Classes\MediaViewer.Image">
+          <RegistryValue Type="string" Value="画像（メディアビューワー）" KeyPath="yes" />
+          <RegistryValue Name="FriendlyTypeName" Type="string" Value="画像（メディアビューワー）" />
+          <RegistryValue Key="DefaultIcon" Type="string" Value="&quot;[INSTALLFOLDER]MediaViewer.exe&quot;,0" />
+          <RegistryValue Key="shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]MediaViewer.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+        <RegistryValue Root="HKLM" Key="Software\Classes\.png\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.jpg\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.jpeg\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.jpe\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.jfif\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.bmp\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.dib\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.gif\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.webp\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.tif\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.tiff\OpenWithProgids" Name="MediaViewer.Image" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".png" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".jpg" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".jpeg" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".jpe" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".jfif" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".bmp" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".dib" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".gif" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".webp" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".tif" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".tiff" Type="string" Value="MediaViewer.Image" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".png" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".jpg" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".jpeg" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".jpe" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".jfif" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".bmp" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".dib" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".gif" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".webp" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".tif" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".tiff" Type="string" Value="" />
+      </Component>
+
+      <!-- 動画 -->
+      <Component Id="ProgIdVideo" Guid="*">
+        <RegistryKey Root="HKLM" Key="Software\Classes\MediaViewer.Video">
+          <RegistryValue Type="string" Value="動画（メディアビューワー）" KeyPath="yes" />
+          <RegistryValue Name="FriendlyTypeName" Type="string" Value="動画（メディアビューワー）" />
+          <RegistryValue Key="DefaultIcon" Type="string" Value="&quot;[INSTALLFOLDER]MediaViewer.exe&quot;,0" />
+          <RegistryValue Key="shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]MediaViewer.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+        <RegistryValue Root="HKLM" Key="Software\Classes\.mp4\OpenWithProgids" Name="MediaViewer.Video" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.m4v\OpenWithProgids" Name="MediaViewer.Video" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.mkv\OpenWithProgids" Name="MediaViewer.Video" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.mov\OpenWithProgids" Name="MediaViewer.Video" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.avi\OpenWithProgids" Name="MediaViewer.Video" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.webm\OpenWithProgids" Name="MediaViewer.Video" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".mp4" Type="string" Value="MediaViewer.Video" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".m4v" Type="string" Value="MediaViewer.Video" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".mkv" Type="string" Value="MediaViewer.Video" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".mov" Type="string" Value="MediaViewer.Video" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".avi" Type="string" Value="MediaViewer.Video" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".webm" Type="string" Value="MediaViewer.Video" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".mp4" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".m4v" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".mkv" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".mov" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".avi" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".webm" Type="string" Value="" />
+      </Component>
+
+      <!-- 音声 -->
+      <Component Id="ProgIdAudio" Guid="*">
+        <RegistryKey Root="HKLM" Key="Software\Classes\MediaViewer.Audio">
+          <RegistryValue Type="string" Value="音声（メディアビューワー）" KeyPath="yes" />
+          <RegistryValue Name="FriendlyTypeName" Type="string" Value="音声（メディアビューワー）" />
+          <RegistryValue Key="DefaultIcon" Type="string" Value="&quot;[INSTALLFOLDER]MediaViewer.exe&quot;,0" />
+          <RegistryValue Key="shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]MediaViewer.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+        <RegistryValue Root="HKLM" Key="Software\Classes\.mp3\OpenWithProgids" Name="MediaViewer.Audio" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.wav\OpenWithProgids" Name="MediaViewer.Audio" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.flac\OpenWithProgids" Name="MediaViewer.Audio" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.m4a\OpenWithProgids" Name="MediaViewer.Audio" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.aac\OpenWithProgids" Name="MediaViewer.Audio" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.ogg\OpenWithProgids" Name="MediaViewer.Audio" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.oga\OpenWithProgids" Name="MediaViewer.Audio" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.opus\OpenWithProgids" Name="MediaViewer.Audio" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".mp3" Type="string" Value="MediaViewer.Audio" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".wav" Type="string" Value="MediaViewer.Audio" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".flac" Type="string" Value="MediaViewer.Audio" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".m4a" Type="string" Value="MediaViewer.Audio" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".aac" Type="string" Value="MediaViewer.Audio" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".ogg" Type="string" Value="MediaViewer.Audio" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".oga" Type="string" Value="MediaViewer.Audio" />
+        <RegistryValue Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities\FileAssociations" Name=".opus" Type="string" Value="MediaViewer.Audio" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".mp3" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".wav" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".flac" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".m4a" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".aac" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".ogg" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".oga" Type="string" Value="" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe\SupportedTypes" Name=".opus" Type="string" Value="" />
+      </Component>
+
+      <!-- 既定のアプリの設定画面に表示するための登録 -->
+      <Component Id="AppCapabilities" Guid="*">
+        <RegistryKey Root="HKLM" Key="Software\HarutamaProject\MediaViewer\Capabilities">
+          <RegistryValue Name="ApplicationName" Type="string" Value="メディアビューワー" KeyPath="yes" />
+          <RegistryValue Name="ApplicationDescription" Type="string" Value="写真・動画・音声を色管理して表示・再生するビューワー" />
+          <RegistryValue Name="ApplicationIcon" Type="string" Value="&quot;[INSTALLFOLDER]MediaViewer.exe&quot;,0" />
+        </RegistryKey>
+        <RegistryValue Root="HKLM" Key="Software\RegisteredApplications" Name="MediaViewer" Type="string" Value="Software\HarutamaProject\MediaViewer\Capabilities" />
+        <RegistryKey Root="HKLM" Key="Software\Classes\Applications\MediaViewer.exe">
+          <RegistryValue Name="FriendlyAppName" Type="string" Value="メディアビューワー" />
+          <RegistryValue Key="DefaultIcon" Type="string" Value="&quot;[INSTALLFOLDER]MediaViewer.exe&quot;,0" />
+          <RegistryValue Key="shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]MediaViewer.exe&quot; &quot;%1&quot;" />
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

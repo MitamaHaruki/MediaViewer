@@ -61,11 +61,11 @@
                         <MenuFlyoutSubItem x:Name="MenuAudioTracks" Text="音声トラック" IsEnabled="False" />
                     </MenuBarItem>
                     <MenuBarItem Title="設定">
-                        <MenuFlyoutItem Text="更新設定..." IsEnabled="False" />
+                        <MenuFlyoutItem x:Name="MenuUpdateSettings" Text="更新設定..." Click="OnUpdateSettingsClick" />
                         <MenuFlyoutItem Text="一般設定..." Click="OnGeneralSettingsClick" />
                     </MenuBarItem>
                     <MenuBarItem Title="ヘルプ">
-                        <MenuFlyoutItem Text="更新を確認" IsEnabled="False" />
+                        <MenuFlyoutItem x:Name="MenuCheckUpdates" Text="更新を確認" Click="OnCheckUpdatesClick" />
                         <MenuFlyoutItem Text="色管理の診断情報..." Click="OnDiagnosticsClick" />
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem Text="このアプリについて" Click="OnAboutClick" />
@@ -134,11 +134,17 @@
 
             <ProgressRing x:Name="LoadingRing" Width="40" Height="40" IsActive="False" IsHitTestVisible="False" />
 
-            <InfoBar x:Name="MessageBar"
-                     VerticalAlignment="Top"
-                     Margin="12"
-                     IsOpen="False"
-                     Severity="Error" />
+            <StackPanel VerticalAlignment="Top" Margin="12" Spacing="8">
+                <InfoBar x:Name="MessageBar"
+                         IsOpen="False"
+                         Severity="Error" />
+
+                <!-- 更新の通知（新しい版の準備ができた、確認結果など）。ファイルのエラー表示とは別に出す -->
+                <InfoBar x:Name="UpdateBar"
+                         IsOpen="False"
+                         Severity="Informational"
+                         Closed="OnUpdateBarClosed" />
+            </StackPanel>
         </Grid>
 
         <!-- 下部：コントロールバー（フルスクリーン時は映像の上に重ねて自動非表示） -->

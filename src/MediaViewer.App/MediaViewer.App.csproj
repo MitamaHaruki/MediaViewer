@@ -38,6 +38,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AssemblyMetadata Include="UpdateRepository" Value="$(UpdateRepository)" Condition="'$(UpdateRepository)' != ''" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MediaViewer.Core\MediaViewer.Core.csproj" />
     <ProjectReference Include="..\MediaViewer.Imaging\MediaViewer.Imaging.csproj" />
   </ItemGroup>
