@@ -8,7 +8,7 @@
 - 対象OS：Windows 11 24H2 以降（x64）
 - ライセンス：GNU General Public License v3.0 以降（[LICENSE](LICENSE)）。Windows App SDK とのリンクについて GPLv3 第7条の追加許可あり（[LICENSE-ADDITIONAL-PERMISSION.txt](LICENSE-ADDITIONAL-PERMISSION.txt)）
 
-> 現在は開発中です（初回の公開前）。
+> 最新版は [Releases](https://github.com/MitamaHaruki/MediaViewer/releases/latest) から入手できます。
 
 ## インストール
 
