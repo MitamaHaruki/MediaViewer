@@ -22,6 +22,12 @@
     <SummaryInformation Description="メディアビューワー $(Version) インストーラー" Codepage="932" />
 
     <MajorUpgrade Schedule="afterInstallInitialize" AllowDowngrades="yes" />
+    <!--
+      古い版を入れ直す（ロールバック・ダウングレード）とき、既定の規則（omus）では「入っているファイルの方が新しい」
+      ファイルを複写しないと判断した後で、旧版の削除がそのファイルを消してしまい、アプリ本体が欠ける。
+      版が異なれば新旧に関係なく置き換える（d）ことで防ぐ。インストール先はこのアプリ専用のフォルダだけなので影響はない。
+    -->
+    <Property Id="REINSTALLMODE" Value="dmus" />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
     <!-- 「アプリと機能」の表示 -->
