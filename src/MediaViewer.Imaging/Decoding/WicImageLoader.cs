@@ -16,10 +16,10 @@ public static class WicImageLoader
 {
     private const ushort ExifColorSpaceSrgb = 1;
     private const ushort ExifColorSpaceAdobeRgb = 2;
-    private static readonly Guid ContainerFormatPng = new("1b7cfaf4-713f-473c-bbcd-6137425faeaf");
-    private static readonly Guid ContainerFormatJpeg = new("19e4a5aa-5662-4fc5-a0c0-1758028e1057");
+    internal static readonly Guid ContainerFormatPng = new("1b7cfaf4-713f-473c-bbcd-6137425faeaf");
+    internal static readonly Guid ContainerFormatJpeg = new("19e4a5aa-5662-4fc5-a0c0-1758028e1057");
 
-    private static readonly Guid[] CmykFormats =
+    internal static readonly Guid[] CmykFormats =
     [
         PixelFormat.Format32bppCMYK,
         PixelFormat.Format64bppCMYK,
@@ -150,7 +150,7 @@ public static class WicImageLoader
         }
     }
 
-    private static bool IsHighBitDepth(IWICImagingFactory wic, Guid format)
+    internal static bool IsHighBitDepth(IWICImagingFactory wic, Guid format)
     {
         try
         {
@@ -170,7 +170,7 @@ public static class WicImageLoader
     /// PNG cICP → 埋め込みICC（RGB／グレー／CMYK） → PNG sRGB・gAMA/cHRM → EXIF の色空間指定 → sRGB（仕様 §5.2-2）。
     /// CMYK の場合は CMYK プロファイル（あれば）を返し、変換は呼び出し側で行う。
     /// </summary>
-    private static (SourceColor Color, byte[]? CmykProfile) ReadSourceColor(
+    internal static (SourceColor Color, byte[]? CmykProfile) ReadSourceColor(
         IWICImagingFactory wic, IWICBitmapFrameDecode frame, Guid container, Func<Stream> openRaw, bool isCmyk)
     {
         PngColorChunks? png = null;
@@ -369,7 +369,7 @@ public static class WicImageLoader
         PixelFormat.Format24bppBGR,
     ];
 
-    private static byte[]? DefaultCmykProfile()
+    internal static byte[]? DefaultCmykProfile()
     {
         var path = Path.Combine(Environment.SystemDirectory, "spool", "drivers", "color", "RSWOP.icm");
         try
@@ -389,7 +389,7 @@ public static class WicImageLoader
         return context.GetProfileBytes(bytes, out _).Success ? bytes : null;
     }
 
-    private static ExifOrientation ReadOrientation(IWICBitmapFrameDecode frame)
+    internal static ExifOrientation ReadOrientation(IWICBitmapFrameDecode frame)
     {
         try
         {

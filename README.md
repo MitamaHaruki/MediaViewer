@@ -27,7 +27,8 @@
 | 同じフォルダ内の前後移動・種類フィルター | 実装済み |
 | 仮想フルスクリーン（操作バーの自動非表示） | 実装済み |
 | 設定の保存（音量・ミュート・フィルター・シーク幅・ウィンドウ位置）、一般設定画面 | 実装済み |
-| 形式変換・自動更新 | 未実装（今後のフェーズ） |
+| 形式変換（画像：PNG／JPEG／BMP／GIF／WebP／TIFF、動画：MP4／MKV／MOV／AVI／WebM、音声：MP3／WAV／FLAC／M4A／OGG） | 実装済み（配布用 FFmpeg の同梱は Phase 5） |
+| 自動更新 | 未実装（Phase 5） |
 
 設定は `%LocalAppData%\MediaViewer\settings.json` に保存されます（インストール先とは別の場所のため、更新しても消えません）。
 
@@ -57,6 +58,8 @@ dotnet build MediaViewer.slnx -c Debug
 ```bash
 dotnet test tests/MediaViewer.Tests/MediaViewer.Tests.csproj
 ```
+
+動画・音声の変換と WebP の保存には FFmpeg（ffmpeg.exe・ffprobe.exe）が必要です。開発中は次のいずれかに置きます：アプリと同じ場所の `ffmpeg` フォルダ、環境変数 `MEDIAVIEWER_FFMPEG_DIR` のフォルダ、またはリポジトリの `tools/ffmpeg-dl`（Git 管理外）。FFmpeg がない環境では、変換の結合テストは結論保留になります。
 
 配布用の発行（自己完結・トリミング・ReadyToRun）：
 

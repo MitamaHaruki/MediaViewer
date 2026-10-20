@@ -34,7 +34,7 @@
                 <MenuBar x:Name="AppMenuBar" VerticalAlignment="Center">
                     <MenuBarItem Title="ファイル">
                         <MenuFlyoutItem Text="開く..." KeyboardAcceleratorTextOverride="Ctrl+O" Click="OnOpenClick" />
-                        <MenuFlyoutItem Text="変換..." IsEnabled="False" />
+                        <MenuFlyoutItem Text="変換..." Click="OnConvertClick" />
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem Text="終了" Click="OnExitClick" />
                     </MenuBarItem>

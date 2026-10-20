@@ -62,6 +62,23 @@ public sealed partial class MainWindow
 
     private void OnExitClick(object sender, RoutedEventArgs e) => Close();
 
+    private ConversionWindow? _conversionWindow;
+
+    /// <summary>変換画面を開く（表示中のファイルを入力にする）。既に開いていれば前面に出す。</summary>
+    private void OnConvertClick(object sender, RoutedEventArgs e)
+    {
+        if (_conversionWindow is null)
+        {
+            _conversionWindow = new ConversionWindow(_currentPath, OpenAsync);
+            _conversionWindow.Closed += (_, _) => _conversionWindow = null;
+        }
+        else if (_currentPath is not null)
+        {
+            _conversionWindow.SetInput(_currentPath);
+        }
+        _conversionWindow.Activate();
+    }
+
     // ---- 表示 ----
 
     private void OnFitClick(object sender, RoutedEventArgs e) => _viewport.ResetToFit();

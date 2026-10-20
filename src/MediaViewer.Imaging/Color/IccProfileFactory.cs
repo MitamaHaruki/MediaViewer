@@ -16,6 +16,7 @@ public sealed record RgbPrimaries(Chromaticity Red, Chromaticity Green, Chromati
     public static RgbPrimaries Srgb { get; } = new(new(0.64, 0.33), new(0.30, 0.60), new(0.15, 0.06), D65);
     public static RgbPrimaries DisplayP3 { get; } = new(new(0.680, 0.320), new(0.265, 0.690), new(0.150, 0.060), D65);
     public static RgbPrimaries Bt2020 { get; } = new(new(0.708, 0.292), new(0.170, 0.797), new(0.131, 0.046), D65);
+    public static RgbPrimaries AdobeRgb { get; } = new(new(0.64, 0.33), new(0.21, 0.71), new(0.15, 0.06), D65);
 }
 
 /// <summary>
@@ -36,6 +37,15 @@ public static class IccProfileFactory
 
     /// <summary>作業用の広色域RGB（BT.2020原色・ガンマ2.2）。CMYK画像の変換先に使う。</summary>
     public static byte[] WideGamutWorkingSpace { get; } = CreateRgb(RgbPrimaries.Bt2020, Gamma(2.2), "MediaViewer working space (BT.2020, gamma 2.2)");
+
+    /// <summary>Display P3（sRGB のトーンカーブ）。CMYK 画像を RGB 形式で保存するときの出力色空間。</summary>
+    public static byte[] DisplayP3 { get; } = CreateRgb(RgbPrimaries.DisplayP3, SrgbToLinear, "Display P3");
+
+    /// <summary>Adobe RGB (1998) 相当（ガンマ 563/256）。EXIF で Adobe RGB 指定の画像を保存するとき埋め込む。</summary>
+    public static byte[] AdobeRgb { get; } = CreateRgb(RgbPrimaries.AdobeRgb, Gamma(563.0 / 256), "Adobe RGB (1998) compatible");
+
+    /// <summary>sRGB（IEC 61966-2.1 相当）。色変換の出力先に使う。</summary>
+    public static byte[] Srgb { get; } = CreateRgb(RgbPrimaries.Srgb, SrgbToLinear, "sRGB IEC61966-2.1 compatible");
 
     public static byte[] CreateRgb(RgbPrimaries primaries, TransferFunction transfer, string description)
     {
