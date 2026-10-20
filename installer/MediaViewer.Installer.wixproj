@@ -4,6 +4,7 @@
     MSI インストーラー。リリース用のワークフローで、発行フォルダ（PublishDir）を指定してビルドする：
       dotnet build installer/MediaViewer.Installer.wixproj -c Release -p:Version=1.2.3 -p:PublishDir=<発行フォルダ>\
     発行フォルダには、アプリ本体・更新プログラム（MediaViewer.Updater.exe）・ffmpeg フォルダを入れておく。
+    バージョン番号だけを変えて作り直すときは、増分ビルドで MSI の作成が省かれるため、増分ビルドを無効にする（no-incremental）。
     WiX は v6 以降で利用条件が変わったため、v5 系を使う。
   -->
   <PropertyGroup>

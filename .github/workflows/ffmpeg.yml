@@ -54,21 +54,11 @@ jobs:
             mingw-w64-ucrt-x86_64-bzip2
             mingw-w64-ucrt-x86_64-libiconv
 
+      # 同梱する外部ライブラリのソース（GPL の「対応するソース」）の取得とライセンス文の収録も build.sh で行う
       - name: FFmpeg をビルド
         env:
           BUILD_REVISION: ${{ github.event.inputs.revision || '1' }}
         run: ./build/ffmpeg/build.sh
-
-      # GPL のため、同梱する GPL／LGPL の外部ライブラリのソースも同じリリースに添付する
-      - name: 外部ライブラリのソースを取得
-        run: |
-          mkdir -p build/ffmpeg/out/sources
-          cd build/ffmpeg/out/sources
-          for pkg in x264 lame libiconv libvpx opus libvorbis libogg libwebp dav1d; do
-            ver=$(pacman -Q "mingw-w64-ucrt-x86_64-$pkg" | awk '{print $2}')
-            curl -fsSL --retry 3 -O "https://repo.msys2.org/mingw/sources/mingw-w64-$pkg-$ver.src.tar.zst" || echo "取得できません: $pkg $ver"
-          done
-          ls -la
 
       - name: プレリリースに添付
         shell: pwsh

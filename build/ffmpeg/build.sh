@@ -84,17 +84,51 @@ for dll in "$STAGE"/*.dll; do
   done
 done
 
-# ライセンスと、ソースの入手先（GPL の「対応するソース」）の情報
-cp COPYING.GPLv2 LICENSE.md "$STAGE/licenses/" 2>/dev/null || cp LICENSE.md "$STAGE/licenses/"
-# 同梱する外部ライブラリのライセンス文（BSD 系は配布物に著作権表示を含める必要がある）
-for pkg in x264 libvpx opus lame libvorbis libogg libwebp dav1d zlib bzip2 libiconv gcc-libs libwinpthread winpthreads; do
+# ---- ライセンスとソース ----
+# FFmpeg のライセンス文（GPL v2・v3、LGPL v2.1・v3 の全文を含む。x264 は GPL、LAME は LGPL）
+cp LICENSE.md COPYING.* "$STAGE/licenses/"
+
+# 同梱する MSYS2 パッケージのソース（GPL の「対応するソース」。リリースに添付する）
+SOURCES="$OUT/sources"
+mkdir -p "$SOURCES"
+SOURCE_PACKAGES="x264 lame libiconv libvpx opus libvorbis libogg libwebp dav1d zlib bzip2"
+for pkg in $SOURCE_PACKAGES; do
+  ver=$(pacman -Q "mingw-w64-ucrt-x86_64-$pkg" | awk '{print $2}')
+  file="mingw-w64-$pkg-$ver.src.tar.zst"
+  [ -f "$SOURCES/$file" ] || curl -fsSL --retry 3 -o "$SOURCES/$file" "https://repo.msys2.org/mingw/sources/$file" \
+    || { echo "ソースを取得できません：$pkg $ver"; exit 1; }
+done
+
+# 外部ライブラリのライセンス文（BSD 系は配布物に著作権表示を含める必要がある）。
+# MSYS2 が share/licenses に入れていないものは、ソースパッケージ内の元のソースから取り出す
+extract_licenses() {
+  local pkg="$1" tmp
+  tmp=$(mktemp -d)
+  tar -I zstd -xf "$SOURCES"/mingw-w64-"$pkg"-*.src.tar.zst -C "$tmp"
+  for inner in "$tmp"/*/*.tar.*; do
+    [ -f "$inner" ] && tar -xf "$inner" -C "$tmp" 2>/dev/null || true
+  done
+  find "$tmp" -mindepth 2 -maxdepth 2 -type f \( -name 'LICENSE*' -o -name 'COPYING*' -o -name 'PATENTS' \) \
+    -exec cp {} "$STAGE/licenses/$pkg/" \;
+  rm -rf "$tmp"
+}
+for pkg in $SOURCE_PACKAGES gcc-libs libwinpthread winpthreads; do
+  mkdir -p "$STAGE/licenses/$pkg"
   if [ -d "/ucrt64/share/licenses/$pkg" ]; then
-    mkdir -p "$STAGE/licenses/$pkg"
     cp -r "/ucrt64/share/licenses/$pkg/." "$STAGE/licenses/$pkg/"
-  else
+  elif [ -n "$(ls "$SOURCES"/mingw-w64-"$pkg"-*.src.tar.zst 2>/dev/null)" ]; then
+    extract_licenses "$pkg"
+  fi
+  if [ -z "$(ls -A "$STAGE/licenses/$pkg")" ]; then
+    rmdir "$STAGE/licenses/$pkg"
     echo "ライセンス文が見つかりません：$pkg"
   fi
 done
+# BSD 系で著作権表示が必須のものは、見つからなければ失敗にする
+for pkg in libvpx libvorbis libogg opus libwebp dav1d; do
+  [ -d "$STAGE/licenses/$pkg" ] || { echo "必須のライセンス文がありません：$pkg"; exit 1; }
+done
+ls -R "$STAGE/licenses"
 {
   echo "FFmpeg ${FFMPEG_VERSION}（メディアビューワー同梱用ビルド ${BUILD_REVISION}）"
   echo
@@ -105,7 +139,7 @@ done
   echo "configure の指定:"
   sed -n 's/^  *--/  --/p' "$ROOT/build.sh"
   echo
-  echo "同梱している MSYS2 パッケージ（ソースは同じリリースに添付）:"
+  echo "同梱している MSYS2 パッケージ（ソースは同じリリースに添付、https://repo.msys2.org/mingw/sources/ からも入手可）:"
   pacman -Q mingw-w64-ucrt-x86_64-x264 mingw-w64-ucrt-x86_64-libvpx mingw-w64-ucrt-x86_64-opus \
     mingw-w64-ucrt-x86_64-lame mingw-w64-ucrt-x86_64-libvorbis mingw-w64-ucrt-x86_64-libogg \
     mingw-w64-ucrt-x86_64-libwebp mingw-w64-ucrt-x86_64-dav1d mingw-w64-ucrt-x86_64-zlib \

@@ -89,7 +89,7 @@ dotnet test tests/MediaViewer.Tests/MediaViewer.Tests.csproj
 インストーラー（MSI）の作成（WiX Toolset v5）：
 
 ```bash
-dotnet build installer/MediaViewer.Installer.wixproj -c Release -p:Version=0.1.0 -p:PublishDir=artifacts/publish/
+dotnet build installer/MediaViewer.Installer.wixproj --no-incremental -c Release -p:Version=0.1.0 -p:PublishDir=artifacts/publish/
 ```
 
 ### リリースの手順（開発者向け）

@@ -78,7 +78,7 @@ jobs:
       - name: インストーラー（MSI）を作成
         shell: pwsh
         run: |
-          dotnet build installer/MediaViewer.Installer.wixproj -c Release -p:Version=$env:VERSION -p:PublishDir="$env:GITHUB_WORKSPACE\artifacts\publish\"
+          dotnet build installer/MediaViewer.Installer.wixproj --no-incremental -c Release -p:Version=$env:VERSION -p:PublishDir="$env:GITHUB_WORKSPACE\artifacts\publish\"
           if ($LASTEXITCODE -ne 0) { throw 'MSI の作成に失敗しました。' }
           New-Item -ItemType Directory -Force artifacts/release | Out-Null
           Copy-Item "installer/bin/Release/$env:MSI" artifacts/release/
