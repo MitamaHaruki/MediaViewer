@@ -5,6 +5,7 @@ using MediaViewer.App.Services;
 using MediaViewer.Core.Diagnostics;
 using MediaViewer.Core.Media;
 using MediaViewer.Core.Navigation;
+using MediaViewer.Core.Settings;
 using MediaViewer.Core.Viewport;
 using MediaViewer.Imaging.Color;
 using MediaViewer.Imaging.Decoding;
@@ -46,8 +47,9 @@ public sealed partial class MainWindow : Window
     private CancellationTokenSource? _openCts;
     private string _mediaInfo = "";
 
-    public MainWindow()
+    public MainWindow(SettingsStore settingsStore, AppSettings settings)
     {
+        _settingsStore = settingsStore;
         InitializeComponent();
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -83,6 +85,7 @@ public sealed partial class MainWindow : Window
             }
         };
         ControlBar.SizeChanged += (_, _) => UpdateCompactLayout();
+        ApplySettings(settings);
         UpdateUi();
     }
 
@@ -490,6 +493,7 @@ public sealed partial class MainWindow : Window
         };
         // フィルター変更の瞬間にフォルダを再走査する（仕様 §4.2）。表示中のファイルはそのまま
         RefreshNeighbors();
+        SaveSettings(s => s.NavigationFilter = filter);
     }
 
     // ---- 状態表示 ----
@@ -558,6 +562,8 @@ public sealed partial class MainWindow : Window
 
     private void OnClosed(object sender, WindowEventArgs args)
     {
+        _volumeSaveTimer?.Stop();
+        SaveWindowPlacementOnClose();
         _positionTimer.Stop();
         _hideTimer.Stop();
         ReleaseGraphics();

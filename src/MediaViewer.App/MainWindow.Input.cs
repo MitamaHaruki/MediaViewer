@@ -20,7 +20,6 @@ public sealed partial class MainWindow
 {
     private const double WheelZoomStep = 1.2;     // ホイール1ノッチの倍率
     private const double SwipeMinDistance = 80;   // スワイプと判定する横移動量（DIP）
-    private static readonly TimeSpan SeekStep = TimeSpan.FromSeconds(5);
     private const double VolumeStep = 5;
 
     private uint? _mousePanPointer;
@@ -200,7 +199,7 @@ public sealed partial class MainWindow
                 break;
             case VirtualKey.Left or VirtualKey.Right when !inMenu:
                 var forward = e.Key == VirtualKey.Right;
-                if (IsPlayable) _playback!.SeekBy(forward ? SeekStep : -SeekStep);
+                if (IsPlayable) _playback!.SeekBy(forward ? _seekStep : -_seekStep);
                 else Navigate(forward);
                 UpdatePosition();
                 break;

@@ -1,4 +1,5 @@
 using MediaViewer.Core.Diagnostics;
+using MediaViewer.Core.Settings;
 using Microsoft.UI.Xaml;
 
 namespace MediaViewer.App;
@@ -25,7 +26,8 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        _window = new MainWindow();
+        var store = SettingsStore.CreateDefault();
+        _window = new MainWindow(store, store.Load());
         _window.Activate();
 
         // 関連付け起動・起動引数のローカルファイルパス（仕様 §3.2）。多重起動は許可（仕様決定事項 D5）

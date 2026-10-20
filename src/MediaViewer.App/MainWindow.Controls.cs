@@ -104,8 +104,9 @@ public sealed partial class MainWindow
     {
         // 音量・ミュートはファイルを切り替えても維持する（仕様 §3.3）
         if (_playback is not null) _playback.Volume = e.NewValue / 100.0;
-        if (e.NewValue > 0 && _isMuted) SetMuted(false);
+        if (e.NewValue > 0 && _isMuted && !_applyingSettings) SetMuted(false);
         UpdateMuteIcon();
+        ScheduleVolumeSave();
     }
 
     private void OnMuteClick(object sender, RoutedEventArgs e) => SetMuted(!_isMuted);
@@ -118,10 +119,12 @@ public sealed partial class MainWindow
 
     private void SetMuted(bool muted)
     {
+        var changed = _isMuted != muted;
         _isMuted = muted;
         if (_playback is not null) _playback.IsMuted = muted;
         MenuMute.IsChecked = muted;
         UpdateMuteIcon();
+        if (changed) SaveSettings(s => s.IsMuted = muted);
     }
 
     private void UpdateMuteIcon()
@@ -222,12 +225,7 @@ public sealed partial class MainWindow
             presenter.Maximize();
             return;
         }
-        var area = DisplayArea.GetFromRect(_restoreRect, DisplayAreaFallback.Nearest).WorkArea;
-        var w = Math.Min(_restoreRect.Width, area.Width);
-        var h = Math.Min(_restoreRect.Height, area.Height);
-        var x = Math.Clamp(_restoreRect.X, area.X, area.X + area.Width - w);
-        var y = Math.Clamp(_restoreRect.Y, area.Y, area.Y + area.Height - h);
-        AppWindow.MoveAndResize(new RectInt32(x, y, w, h));
+        AppWindow.MoveAndResize(ClampToWorkArea(_restoreRect));
     }
 
     /// <summary>フルスクリーン中、操作があればバーを表示し、約5秒後に隠す（仕様 §8-3〜5）。</summary>

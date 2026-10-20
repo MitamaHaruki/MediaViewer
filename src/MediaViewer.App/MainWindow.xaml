@@ -62,7 +62,7 @@
                     </MenuBarItem>
                     <MenuBarItem Title="設定">
                         <MenuFlyoutItem Text="更新設定..." IsEnabled="False" />
-                        <MenuFlyoutItem Text="一般設定..." IsEnabled="False" />
+                        <MenuFlyoutItem Text="一般設定..." Click="OnGeneralSettingsClick" />
                     </MenuBarItem>
                     <MenuBarItem Title="ヘルプ">
                         <MenuFlyoutItem Text="更新を確認" IsEnabled="False" />
