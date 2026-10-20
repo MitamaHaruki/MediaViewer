@@ -9,8 +9,26 @@ public enum SourceColorKind
     /// <summary>EXIF の色空間指定が sRGB。</summary>
     ExifSrgb,
 
-    /// <summary>EXIF の色空間指定が Adobe RGB。</summary>
+    /// <summary>EXIF の色空間指定が Adobe RGB（ColorSpace=2、または未校正＋互換性インデックス R03）。</summary>
     ExifAdobeRgb,
+
+    /// <summary>グレーの ICC（kTRC）から同じ階調の RGB プロファイルを作った。</summary>
+    GrayIcc,
+
+    /// <summary>CMYK を ICC で作業用の広色域 RGB へ変換した。</summary>
+    CmykConverted,
+
+    /// <summary>PNG の cICP（SDR の符号化指定）から ICC を作った。</summary>
+    PngCicp,
+
+    /// <summary>PNG の sRGB チャンク。</summary>
+    PngSrgb,
+
+    /// <summary>PNG の gAMA / cHRM から ICC を作った。</summary>
+    PngGamma,
+
+    /// <summary>HDR（PQ、BT.2020 原色）。PNG の cICP など。</summary>
+    HdrPq,
 
     /// <summary>色空間の指定がないため sRGB とみなした（仕様 §5.2-2）。</summary>
     AssumedSrgb,
@@ -19,12 +37,33 @@ public enum SourceColorKind
     InvalidIccFallbackSrgb,
 }
 
-/// <summary>画像（または動画フレーム）のソース色空間。</summary>
-public sealed record SourceColor(SourceColorKind Kind, byte[]? IccProfile, string? Note = null)
+/// <summary>
+/// 画像（または動画フレーム）のソース色空間。IccProfile があればそれを使う。
+/// HdrMaxNits は HDR コンテンツの最大輝度（不明なら 0）。
+/// </summary>
+public sealed record SourceColor(SourceColorKind Kind, byte[]? IccProfile, string? Note = null, float HdrMaxNits = 0)
 {
     public static SourceColor Srgb { get; } = new(SourceColorKind.AssumedSrgb, null);
 
     public bool UsesFallback => Kind is SourceColorKind.InvalidIccFallbackSrgb;
+
+    public bool IsHdr => Kind is SourceColorKind.HdrPq;
+
+    /// <summary>診断表示用の名前。</summary>
+    public string Label => Kind switch
+    {
+        SourceColorKind.EmbeddedIcc => "埋め込みICC",
+        SourceColorKind.ExifSrgb => "EXIF sRGB",
+        SourceColorKind.ExifAdobeRgb => "EXIF Adobe RGB",
+        SourceColorKind.GrayIcc => "グレーICC",
+        SourceColorKind.CmykConverted => "CMYK（ICCで変換）",
+        SourceColorKind.PngCicp => "PNG cICP",
+        SourceColorKind.PngSrgb => "PNG sRGB",
+        SourceColorKind.PngGamma => "PNG gAMA/cHRM",
+        SourceColorKind.HdrPq => "HDR（PQ / BT.2020）",
+        SourceColorKind.InvalidIccFallbackSrgb => "ICC不正→sRGB",
+        _ => "sRGB（指定なし）",
+    };
 
     /// <summary>
     /// ICCヘッダーの最低限の検証。RGBのデバイス色空間を持つ表示・入力・色空間プロファイルのみ受け付ける。

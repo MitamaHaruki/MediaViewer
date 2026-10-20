@@ -181,7 +181,15 @@ public sealed class ColorPipelineTests
     {
         var path = WritePng(icc);
         using var image = WicImageLoader.Load(s_device, path, CancellationToken.None);
-        Assert.AreEqual(icc is null ? SourceColorKind.AssumedSrgb : SourceColorKind.EmbeddedIcc, image.Color.Kind);
+        if (icc is null)
+        {
+            // WIC の PNG エンコーダーは sRGB チャンクを書くため、PNG sRGB と判定されることもある
+            Assert.IsTrue(image.Color.Kind is SourceColorKind.AssumedSrgb or SourceColorKind.PngSrgb or SourceColorKind.ExifSrgb, image.Color.Kind.ToString());
+        }
+        else
+        {
+            Assert.AreEqual(SourceColorKind.EmbeddedIcc, image.Color.Kind);
+        }
 
         using var ctx = s_device.CreateDeviceContext();
         ctx.RenderingControls = new RenderingControls { BufferPrecision = BufferPrecision.PerChannel32Float };

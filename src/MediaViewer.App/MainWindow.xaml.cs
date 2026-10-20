@@ -2,6 +2,7 @@ using System.Numerics;
 using MediaViewer.App.Interop;
 using MediaViewer.App.Playback;
 using MediaViewer.App.Services;
+using MediaViewer.Core.Diagnostics;
 using MediaViewer.Core.Media;
 using MediaViewer.Core.Navigation;
 using MediaViewer.Core.Viewport;
@@ -111,7 +112,70 @@ public sealed partial class MainWindow : Window
         };
         _playback.StateChanged += (_, _) => UpdateUi();
         _playback.PlaybackFailed += (_, message) => ShowMessage(message, InfoBarSeverity.Error);
+        _renderer.DeviceLost += (_, _) => DispatcherQueue.TryEnqueue(RecoverFromDeviceLost);
         return _renderer;
+    }
+
+    private bool _recoveringDevice;
+
+    /// <summary>
+    /// GPUデバイスが失われたら、描画・再生を作り直して表示中のファイルを開き直す。
+    /// 動画・音声は再生位置と再生中かどうかを引き継ぐ。
+    /// </summary>
+    private async void RecoverFromDeviceLost()
+    {
+        if (_recoveringDevice) return;
+        _recoveringDevice = true;
+        AppLog.Warn("GPUデバイスの消失を検出しました。描画を作り直します。");
+        var path = _currentPath;
+        var wasPlayable = IsPlayable;
+        var position = _playback?.Position ?? TimeSpan.Zero;
+        var wasPlaying = _playback?.State == PlaybackState.Playing;
+        try
+        {
+            ReleaseGraphics();
+            EnsureGraphics();
+            if (path is null)
+            {
+                _renderer!.Render();
+                return;
+            }
+            await OpenAsync(path);
+            if (wasPlayable && IsPlayable && _currentPath == path)
+            {
+                _playback!.Seek(position);
+                if (!wasPlaying) _playback.Pause();
+            }
+            ShowMessage("グラフィックスの再初期化を行いました（GPUのリセットまたはドライバー更新を検出）。", InfoBarSeverity.Informational);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("描画の再初期化に失敗しました", ex);
+            ShowMessage("グラフィックスを再初期化できませんでした。アプリを再起動してください。", InfoBarSeverity.Error);
+        }
+        finally
+        {
+            _recoveringDevice = false;
+        }
+    }
+
+    /// <summary>描画・再生の資源をすべて解放する（デバイス消失時・終了時）。</summary>
+    private void ReleaseGraphics()
+    {
+        _openCts?.Cancel();
+        try { _renderer?.SetContent(null, SourceColor.Srgb, Matrix3x2.Identity); } catch (Exception) { }
+        _playback?.Dispose();
+        _playback = null;
+        _image?.Dispose();
+        _image = null;
+        _displayMonitor?.Dispose();
+        _displayMonitor = null;
+        _renderer?.Dispose();
+        _renderer = null;
+        _device?.Dispose();
+        _device = null;
+        _currentKind = MediaKind.Unknown;
+        _viewport.ClearContent();
     }
 
     private void UpdateDisplayColor()
@@ -227,6 +291,8 @@ public sealed partial class MainWindow : Window
                 LoadingRing.IsActive = false;
                 UpdateUi();
                 FocusViewer();
+                // 前のファイルのGPUメモリを返す（新しい表示内容は保持される）
+                _renderer?.TrimMemory();
             }
         }
     }
@@ -265,12 +331,18 @@ public sealed partial class MainWindow : Window
         _renderer!.SetContent(image.Image, image.Color, image.Orientation.ToUprightMatrix(image.PixelWidth, image.PixelHeight));
         UpdateViewportSize();
         _viewport.SetContent(image.UprightWidth, image.UprightHeight, limitFitToActualSize: true);
-        _mediaInfo = $"画像 {image.PixelWidth}x{image.PixelHeight}、向き {image.Orientation}、色 {image.Color.Kind}"
-            + (image.IsHighBitDepth ? "、高ビット深度" : "") + (image.FrameCount > 1 ? $"、{image.FrameCount}フレーム" : "");
+        _mediaInfo = $"画像 {image.PixelWidth}x{image.PixelHeight}、向き {image.Orientation}、色 {image.Color.Label}"
+            + (image.IsHighBitDepth ? "、高ビット深度" : "") + (image.FrameCount > 1 ? $"、{image.FrameCount}フレーム" : "")
+            + (image.Color.Note is { } colorNote ? $"（{colorNote}）" : "");
 
         if (image.Color.UsesFallback)
         {
             ShowMessage($"埋め込みICCプロファイルを使用できないため、sRGBとして表示しています。（{image.Color.Note}）", InfoBarSeverity.Warning);
+        }
+        else if (image.Color.Kind is SourceColorKind.CmykConverted or SourceColorKind.AssumedSrgb && image.Color.Note is { } note)
+        {
+            // 既定プロファイルでの変換や、未対応の色指定を sRGB とみなした場合は黙らずに知らせる（仕様 §0-8）
+            ShowMessage(note + "。", InfoBarSeverity.Informational);
         }
         else if (image.FrameCount > 1)
         {
@@ -467,14 +539,8 @@ public sealed partial class MainWindow : Window
 
     private void OnClosed(object sender, WindowEventArgs args)
     {
-        _openCts?.Cancel();
         _positionTimer.Stop();
         _hideTimer.Stop();
-        _renderer?.SetContent(null, SourceColor.Srgb, Matrix3x2.Identity);
-        _playback?.Dispose();
-        _image?.Dispose();
-        _displayMonitor?.Dispose();
-        _renderer?.Dispose();
-        _device?.Dispose();
+        ReleaseGraphics();
     }
 }

@@ -68,7 +68,7 @@ internal sealed class DisplayColorMonitor : IDisposable
                 DisplayColorMode.WideColorGamut => "SDR・自動色管理（ACM）",
                 _ => icc is null ? "SDR（モニターICCなし→sRGB想定）" : $"SDR（モニターICC {icc.Length:N0} バイト）",
             };
-            return new DisplayColorInfo(mode, white, icc, description);
+            return new DisplayColorInfo(mode, white, icc, description, (float)Math.Max(0, aci.MaxLuminanceInNits));
         }
         catch (Exception)
         {

@@ -49,92 +49,121 @@ public sealed class ColorPipeline : IDisposable
         }
     }
 
+    /// <summary>HDR コンテンツの最大輝度が不明なときに仮定する値（nit）。</summary>
+    public const float DefaultHdrContentMaxNits = 1000f;
+
+    // D2D1_HDRTONEMAP_PROP_*（Vortice に定義がないため番号で指定）
+    private const uint HdrToneMapInputMaxLuminance = 0;
+    private const uint HdrToneMapOutputMaxLuminance = 1;
+    private const uint HdrToneMapDisplayMode = 2;
+
     private void Build(ID2D1DeviceContext5 ctx, IWICImagingFactory wic, ID2D1Image source, SourceColor sourceColor, DisplayColorInfo display)
     {
         var srcContext = Own(CreateSourceContext(ctx, wic, sourceColor, out var sourceLabel));
         var scRgb = Own(ctx.CreateColorContext(ColorSpace.ScRgb, null!, 0));
 
+        // 1. ソース → scRGB（線形・拡張範囲）。色域外の値も保持される
+        var linear = OutputOf(CreateColorManagement(ctx, source, srcContext, scRgb));
+        string brightness;
+
+        // 2. 明るさの調整
+        if (sourceColor.IsHdr)
+        {
+            // HDR コンテンツは表示先の最大輝度へトーンマップする（SDR表示ではSDRの白まで圧縮）
+            var inputMax = sourceColor.HdrMaxNits > 0 ? sourceColor.HdrMaxNits : DefaultHdrContentMaxNits;
+            var hdrDisplay = display.Mode == DisplayColorMode.Hdr;
+            var outputMax = hdrDisplay
+                ? (display.MaxLuminanceNits > 0 ? display.MaxLuminanceNits : DisplayColorInfo.DefaultHdrDisplayMaxNits)
+                : DisplayColorInfo.ScRgbReferenceWhiteNits;
+            var tone = Own(new ID2D1Effect(ctx.CreateEffect(EffectGuids.HdrToneMap)));
+            tone.SetInput(0, linear, true);
+            tone.SetValue(HdrToneMapInputMaxLuminance, inputMax);
+            tone.SetValue(HdrToneMapOutputMaxLuminance, outputMax);
+            SetEnum(tone, HdrToneMapDisplayMode, hdrDisplay ? 1u : 0u);
+            linear = OutputOf(tone);
+            brightness = $"、HDRトーンマップ {inputMax:0}→{outputMax:0} nit";
+        }
+        else if (display.Mode == DisplayColorMode.Hdr && Math.Abs(display.SdrWhiteScale - 1f) > 1e-3f)
+        {
+            var white = Own(new ID2D1Effect(ctx.CreateEffect(EffectGuids.WhiteLevelAdjustment)));
+            white.SetInput(0, linear, true);
+            // 入力の1.0をSDR白レベル（nit）として扱い、出力の1.0 = 80 nit（scRGB基準）へ換算する
+            white.SetValue((uint)WhiteLevelAdjustmentProperties.InputWhiteLevel, display.SdrWhiteLevelNits);
+            white.SetValue((uint)WhiteLevelAdjustmentProperties.OutputWhiteLevel, DisplayColorInfo.ScRgbReferenceWhiteNits);
+            linear = OutputOf(white);
+            brightness = $"、SDR白 {display.SdrWhiteLevelNits:0} nit";
+        }
+        else
+        {
+            brightness = "";
+        }
+
+        // 3. 出力。SDR（自動色管理なし）は OS が色変換しないため、アプリがモニターICCへ変換する
         if (display.Mode == DisplayColorMode.Sdr)
         {
             var monitor = TryCreateMonitorContext(ctx, display.MonitorIccProfile);
             if (monitor is not null)
             {
                 Own(monitor);
-                var toMonitor = CreateColorManagement(ctx, source, srcContext, monitor);
+                var toMonitor = CreateColorManagement(ctx, linear, scRgb, monitor);
+                // モニターICCの値を OS は sRGB として出力するため、sRGB → scRGB で包み直す
                 var srgb = Own(ctx.CreateColorContext(ColorSpace.Srgb, null!, 0));
-                var rewrap = CreateColorManagement(ctx, toMonitor.Output, srgb, scRgb);
-                Output = rewrap.Output;
-                Description = $"{sourceLabel} → モニターICC（SDR）";
+                Output = OutputOf(CreateColorManagement(ctx, OutputOf(toMonitor), srgb, scRgb));
+                Description = $"{sourceLabel} → モニターICC（SDR{brightness}）";
             }
             else
             {
                 DisplayFellBack = display.MonitorIccProfile is not null;
-                var cm = CreateColorManagement(ctx, source, srcContext, scRgb);
-                Output = cm.Output;
-                Description = $"{sourceLabel} → sRGBモニター想定（SDR、モニターICCなし{(DisplayFellBack ? "：ICC不正" : "")}）";
+                Output = linear;
+                Description = $"{sourceLabel} → sRGBモニター想定（SDR、モニターICCなし{(DisplayFellBack ? "：ICC不正" : "")}{brightness}）";
             }
             return;
         }
 
-        var toScRgb = CreateColorManagement(ctx, source, srcContext, scRgb);
-        if (display.Mode == DisplayColorMode.Hdr && Math.Abs(display.SdrWhiteScale - 1f) > 1e-3f)
-        {
-            var white = Own(new ID2D1Effect(ctx.CreateEffect(EffectGuids.WhiteLevelAdjustment)));
-            white.SetInput(0, toScRgb.Output, true);
-            // 入力の1.0をSDR白レベル（nit）として扱い、出力の1.0 = 80 nit（scRGB基準）へ換算する
-            white.SetValue((uint)WhiteLevelAdjustmentProperties.InputWhiteLevel, display.SdrWhiteLevelNits);
-            white.SetValue((uint)WhiteLevelAdjustmentProperties.OutputWhiteLevel, DisplayColorInfo.ScRgbReferenceWhiteNits);
-            Output = white.Output;
-        }
-        else
-        {
-            Output = toScRgb.Output;
-        }
+        Output = linear;
         Description = display.Mode == DisplayColorMode.Hdr
-            ? $"{sourceLabel} → scRGB（HDR、SDR白 {display.SdrWhiteLevelNits:0} nit）"
-            : $"{sourceLabel} → scRGB（自動色管理）";
+            ? $"{sourceLabel} → scRGB（HDR{brightness}）"
+            : $"{sourceLabel} → scRGB（自動色管理{brightness}）";
     }
 
     private ID2D1ColorContext CreateSourceContext(ID2D1DeviceContext5 ctx, IWICImagingFactory wic, SourceColor color, out string label)
     {
+        label = color.Label;
+        if (color.IccProfile is { Length: > 0 } icc)
+        {
+            if (!SourceColor.IsSupportedRgbIcc(icc, out _))
+            {
+                SourceFellBack = true;
+                label = "ICC不正→sRGB";
+                return ctx.CreateColorContext(ColorSpace.Srgb, null!, 0);
+            }
+            try
+            {
+                return ctx.CreateColorContext(ColorSpace.Custom, icc, (uint)icc.Length);
+            }
+            catch (SharpGenException)
+            {
+                // 解釈できないICC：クラッシュさせず sRGB として表示する（仕様 §5.2-6）
+                SourceFellBack = true;
+                label = "ICC解釈不可→sRGB";
+                return ctx.CreateColorContext(ColorSpace.Srgb, null!, 0);
+            }
+        }
+
         switch (color.Kind)
         {
-            case SourceColorKind.EmbeddedIcc when color.IccProfile is { Length: > 0 } icc:
-                if (!SourceColor.IsSupportedRgbIcc(icc, out _))
-                {
-                    SourceFellBack = true;
-                    label = "ICC不正→sRGB";
-                    return ctx.CreateColorContext(ColorSpace.Srgb, null!, 0);
-                }
-                try
-                {
-                    var c = ctx.CreateColorContext(ColorSpace.Custom, icc, (uint)icc.Length);
-                    label = "埋め込みICC";
-                    return c;
-                }
-                catch (SharpGenException)
-                {
-                    // 解釈できないICC：クラッシュさせず sRGB として表示する（仕様 §5.2-6）
-                    SourceFellBack = true;
-                    label = "ICC解釈不可→sRGB";
-                    return ctx.CreateColorContext(ColorSpace.Srgb, null!, 0);
-                }
+            case SourceColorKind.HdrPq:
+                return ctx.CreateColorContextFromDxgiColorSpace(Vortice.DXGI.ColorSpaceType.RgbFullG2084NoneP2020);
             case SourceColorKind.ExifAdobeRgb:
                 {
                     using var wicContext = wic.CreateColorContext();
                     wicContext.InitializeFromExifColorSpace(2);
-                    label = "EXIF Adobe RGB";
                     return ctx.CreateColorContextFromWicColorContext(wicContext);
                 }
             case SourceColorKind.InvalidIccFallbackSrgb:
                 SourceFellBack = true;
-                label = "ICC不正→sRGB";
-                return ctx.CreateColorContext(ColorSpace.Srgb, null!, 0);
-            case SourceColorKind.ExifSrgb:
-                label = "EXIF sRGB";
                 return ctx.CreateColorContext(ColorSpace.Srgb, null!, 0);
             default:
-                label = "sRGB（指定なし）";
                 return ctx.CreateColorContext(ColorSpace.Srgb, null!, 0);
         }
     }
@@ -167,6 +196,12 @@ public sealed class ColorPipeline : IDisposable
 
     private static unsafe void SetEnum(ID2D1Effect effect, uint index, uint value) =>
         effect.SetValue(index, PropertyType.Enum, &value, sizeof(uint));
+
+    /// <summary>
+    /// エフェクトの出力を取得する。Vortice の Output は読むたびに COM 参照を増やすため、
+    /// 取得した参照もこのパイプラインで解放する（解放しないとエフェクトと入力画像が残り続ける）。
+    /// </summary>
+    private ID2D1Image OutputOf(ID2D1Effect effect) => Own(effect.Output);
 
     private T Own<T>(T resource) where T : IDisposable
     {

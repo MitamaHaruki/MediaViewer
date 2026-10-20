@@ -169,6 +169,18 @@ public sealed partial class MainWindow
         var inMenu = focused is MenuBarItem or MenuFlyoutItemBase;
         var ctrl = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
 
+#if DEBUG
+        // 開発時の確認用：Ctrl+Shift+Alt+D で GPU デバイス消失を模擬する
+        if (e.Key == VirtualKey.D && ctrl
+            && InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down)
+            && InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Menu).HasFlag(CoreVirtualKeyStates.Down))
+        {
+            _renderer?.SimulateDeviceLost();
+            e.Handled = true;
+            return;
+        }
+#endif
+
         switch (e.Key)
         {
             case VirtualKey.O when ctrl:

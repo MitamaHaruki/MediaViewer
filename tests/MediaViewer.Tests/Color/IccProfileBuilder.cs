@@ -74,6 +74,50 @@ internal static class IccProfileBuilder
         return profile;
     }
 
+    /// <summary>グレーの表示プロファイル（kTRC＝単純ガンマ）。</summary>
+    public static byte[] BuildGray(double gamma, string description)
+    {
+        var tags = new List<(string Sig, byte[] Data)>
+        {
+            ("desc", TextDescription(description)),
+            ("cprt", Text("No copyright, test profile")),
+            ("wtpt", Xyz(ColorMath.D50Xyz)),
+            ("kTRC", Curve(gamma)),
+        };
+        const int headerSize = 128;
+        var offset = Align(headerSize + 4 + 12 * tags.Count);
+        var table = new List<(string Sig, int Offset, int Size)>();
+        using var body = new MemoryStream();
+        foreach (var (sig, data) in tags)
+        {
+            table.Add((sig, offset + (int)body.Length, data.Length));
+            body.Write(data);
+            Pad(body);
+        }
+        var total = offset + (int)body.Length;
+        var profile = new byte[total];
+        var span = profile.AsSpan();
+        BinaryPrimitives.WriteUInt32BigEndian(span, (uint)total);
+        BinaryPrimitives.WriteUInt32BigEndian(span[8..], 0x02100000);
+        Ascii(span[12..], "mntr");
+        Ascii(span[16..], "GRAY");
+        Ascii(span[20..], "XYZ ");
+        Ascii(span[36..], "acsp");
+        WriteS15Fixed16(span[68..], ColorMath.D50Xyz[0]);
+        WriteS15Fixed16(span[72..], ColorMath.D50Xyz[1]);
+        WriteS15Fixed16(span[76..], ColorMath.D50Xyz[2]);
+        BinaryPrimitives.WriteUInt32BigEndian(span[headerSize..], (uint)table.Count);
+        for (var i = 0; i < table.Count; i++)
+        {
+            var e = span[(headerSize + 4 + 12 * i)..];
+            Ascii(e, table[i].Sig);
+            BinaryPrimitives.WriteUInt32BigEndian(e[4..], (uint)table[i].Offset);
+            BinaryPrimitives.WriteUInt32BigEndian(e[8..], (uint)table[i].Size);
+        }
+        body.ToArray().CopyTo(span[offset..]);
+        return profile;
+    }
+
     /// <summary>ガンマ値を u8Fixed8 に丸めた実効値（期待値計算で使う）。</summary>
     public static double EffectiveGamma(double gamma) => Math.Round(gamma * 256) / 256.0;
 

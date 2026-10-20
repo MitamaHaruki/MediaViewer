@@ -175,7 +175,9 @@ public sealed class ContentRenderer : IDisposable
 
     private void RenderCore()
     {
+        if (IsDeviceLost) return;
         if (TryDraw()) return;
+        if (IsDeviceLost) return;
 
         // ICCに起因する描画失敗の可能性がある場合は、明示したフォールバック（sRGB）で再試行する（仕様 §5.2-6）
         var retried = false;
@@ -211,11 +213,70 @@ public sealed class ContentRenderer : IDisposable
         var hr = _ctx.EndDraw();
         if (hr.Failure)
         {
-            // デバイス消失・エフェクト失敗等。プロセスは落とさず、呼び出し側でフォールバックする
+            // デバイス消失なら作り直しを依頼する。それ以外（エフェクト失敗等）は呼び出し側でフォールバックする
+            CheckDeviceLost(hr.Code);
             return false;
         }
-        _swapChain!.Present(1, PresentFlags.None);
+        var present = _swapChain!.Present(1, PresentFlags.None);
+        if (present.Failure)
+        {
+            CheckDeviceLost(present.Code);
+            return false;
+        }
         return true;
+    }
+
+    /// <summary>
+    /// GPUのリセット・ドライバー更新などでデバイスが失われた状態。以後の描画は行わず、
+    /// <see cref="DeviceLost"/> を受けた側がデバイスを作り直す（仕様 §15：クラッシュさせない）。
+    /// </summary>
+    public bool IsDeviceLost { get; private set; }
+
+    /// <summary>デバイス消失を検出した（描画を呼んだスレッドで1回だけ発生）。</summary>
+    public event EventHandler? DeviceLost;
+
+    private const int D2DErrRecreateTarget = unchecked((int)0x8899000C);
+    private const int DxgiErrDeviceRemoved = unchecked((int)0x887A0005);
+    private const int DxgiErrDeviceReset = unchecked((int)0x887A0007);
+    private const int DxgiErrDriverInternal = unchecked((int)0x887A0020);
+
+    private void CheckDeviceLost(int hr)
+    {
+        var lost = hr is D2DErrRecreateTarget or DxgiErrDeviceRemoved or DxgiErrDeviceReset or DxgiErrDriverInternal
+            || _device.D3DDevice.DeviceRemovedReason.Failure;
+        if (lost) MarkDeviceLost();
+    }
+
+    private void MarkDeviceLost()
+    {
+        if (IsDeviceLost) return;
+        IsDeviceLost = true;
+        DeviceLost?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// 解放済みの画像のGPUメモリを、ドライバーにすぐ返させる。表示する画像を切り替えた後に呼ぶ。
+    /// Direct3D は解放したテクスチャを再利用のため保持し続けることがあり、大きな画像を
+    /// 切り替えるとメモリが数百MB単位で残るため（仕様 §11.1：不要な資源を解放）。
+    /// </summary>
+    public void TrimMemory()
+    {
+        lock (_gate)
+        {
+            if (_disposed || IsDeviceLost) return;
+            _device.D2DDevice.ClearResources(0);
+            var immediate = _device.D3DDevice.ImmediateContext;
+            immediate.ClearState();
+            immediate.Flush();
+            using var dxgi3 = _device.DxgiDevice.QueryInterfaceOrNull<IDXGIDevice3>();
+            dxgi3?.Trim();
+        }
+    }
+
+    /// <summary>デバイス消失からの復旧を検証するため、消失を模擬する（開発時の確認用）。</summary>
+    public void SimulateDeviceLost()
+    {
+        lock (_gate) MarkDeviceLost();
     }
 
     /// <summary>縮小時は高品質、等倍付近は通常、大きく拡大したらピクセルを確認しやすい最近傍補間にする。</summary>

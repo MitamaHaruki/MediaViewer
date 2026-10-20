@@ -20,12 +20,17 @@ public enum DisplayColorMode
 /// <param name="SdrWhiteLevelNits">HDR時にSDRの白として使う輝度（nit）。scRGB 1.0 = 80 nit。</param>
 /// <param name="MonitorIccProfile">SDR時のモニターICCプロファイル。取得できない場合は null（sRGBモニターとみなす）。</param>
 /// <param name="Description">ログ・診断表示用の説明。</param>
+/// <param name="MaxLuminanceNits">モニターの最大輝度（nit、不明なら 0）。HDR コンテンツのトーンマップに使う。</param>
 public sealed record DisplayColorInfo(
     DisplayColorMode Mode,
     float SdrWhiteLevelNits,
     byte[]? MonitorIccProfile,
-    string Description)
+    string Description,
+    float MaxLuminanceNits = 0)
 {
+    /// <summary>HDR表示で最大輝度が不明な場合に仮定する値。</summary>
+    public const float DefaultHdrDisplayMaxNits = 1000f;
+
     public const float ScRgbReferenceWhiteNits = 80f;
 
     /// <summary>モニター情報が得られないときの明示的なフォールバック：sRGBのSDRモニター。</summary>
