@@ -25,9 +25,8 @@ logs/
 cache/
 *.tmp
 
-# 個人設定・ダウンロード済み更新ファイル
+# 個人設定
 appsettings.local.json
-updates/
 
 # 署名鍵・証明書（絶対にコミットしない）
 *.pfx

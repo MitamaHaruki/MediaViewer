@@ -37,6 +37,7 @@ ENCODERS="libx264,libvpx_vp9,aac,libopus,libmp3lame,libvorbis,flac,pcm_s16le,pcm
 MUXERS="mp4,mov,ipod,matroska,webm,avi,mp3,wav,flac,ogg,webp,null"
 FILTERS="scale,format,aformat,aresample,null,anull,transpose,hflip,vflip,setsar,pad,copy,acopy,fps"
 
+# MSYS2 の iconv.h は関数名を libiconv に置き換えるが、configure はリンク指定を加えないため明示する
 ./configure \
   --prefix="$PREFIX" \
   --arch=x86_64 \
@@ -53,6 +54,7 @@ FILTERS="scale,format,aformat,aresample,null,anull,transpose,hflip,vflip,setsar,
   --enable-libx264 --enable-libvpx --enable-libopus --enable-libmp3lame --enable-libvorbis \
   --enable-libwebp --enable-libdav1d \
   --enable-zlib --enable-bzlib --enable-iconv \
+  --extra-libs=-liconv \
   --extra-version="mediaviewer${BUILD_REVISION}"
 
 make -j"$(nproc)"
