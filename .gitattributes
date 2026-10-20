@@ -1,0 +1,9 @@
+# 改行コードはリポジトリ内で LF に正規化し、チェックアウト時は環境に合わせる
+* text=auto
+
+# バイナリ
+*.png binary
+*.jpg binary
+*.ico binary
+*.icc binary
+*.icm binary

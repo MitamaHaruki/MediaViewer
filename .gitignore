@@ -1,0 +1,49 @@
+# ビルド成果物
+bin/
+obj/
+[Bb]uild/
+[Pp]ublish/
+artifacts/
+*.user
+*.suo
+.vs/
+.vscode/
+*.binlog
+
+# テスト結果・カバレッジ
+TestResults/
+*.trx
+coverage*/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# ログ・キャッシュ・一時ファイル
+*.log
+logs/
+cache/
+*.tmp
+
+# 個人設定・ダウンロード済み更新ファイル
+appsettings.local.json
+updates/
+
+# 署名鍵・証明書（絶対にコミットしない）
+*.pfx
+*.p12
+*.snk
+*.pem
+*.key
+signing/
+
+# 検証用メディア（大容量・著作物を含む可能性があるため）
+testmedia/
+
+# 開発用にダウンロードした外部ツール（FFmpeg等）
+tools/ffmpeg-dl/
+
+# OS
+Thumbs.db
+desktop.ini

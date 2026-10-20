@@ -1,0 +1,29 @@
+MediaViewer — Additional permission under GNU GPL version 3 section 7
+=====================================================================
+
+Copyright (C) 2026 三玉春樹 / はるたまプロジェクト
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See the file LICENSE for the full license text.
+
+Additional permission under GNU GPL version 3 section 7
+
+If you modify this Program, or any covered work, by linking or combining it
+with the Microsoft Windows App SDK (including WinUI 3) or the Microsoft Edge
+WebView2 SDK (or a modified version of those libraries), containing parts
+covered by the terms of the Microsoft Software License Terms for those
+libraries, the licensors of this Program grant you additional permission to
+convey the resulting work.
+
+---------------------------------------------------------------------
+
+（参考訳）GNU GPL 第3版 第7条に基づく追加許可
+
+本プログラム、または本プログラムを含む著作物を、Microsoft Windows App SDK（WinUI 3 を含む）
+または Microsoft Edge WebView2 SDK（およびそれらの改変版）とリンクまたは結合し、その結果に
+それらのライブラリのマイクロソフト ソフトウェア ライセンス条項が適用される部分が含まれる場合でも、
+本プログラムの権利者は、その結果生じる著作物を頒布する追加の許可を与えます。
+
+※法的な効力を持つのは上記の英語の条文です。

@@ -1,0 +1,20 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/MediaViewer.App/MediaViewer.App.csproj">
+      <Platform Project="x64" />
+    </Project>
+    <Project Path="src/MediaViewer.Core/MediaViewer.Core.csproj" />
+    <Project Path="src/MediaViewer.Imaging/MediaViewer.Imaging.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MediaViewer.Tests/MediaViewer.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/IconBuilder/IconBuilder.csproj" />
+  </Folder>
+</Solution>

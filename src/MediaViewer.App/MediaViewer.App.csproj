@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RootNamespace>MediaViewer.App</RootNamespace>
+    <AssemblyName>MediaViewer</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <Platform>x64</Platform>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <!-- 非パッケージアプリでも発行物にアプリ自身の PRI / XBF（XAMLリソース）を含めるために必要 -->
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- メタパッケージ Microsoft.WindowsAppSDK はAI/ML等（onnxruntime・DirectML 等）まで同梱して肥大化するため、必要なコンポーネントだけを参照する -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.3.9" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.InteractiveExperiences" Version="2.1.9" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+    <PackageReference Include="FFmpegInteropX.Desktop.Lib" Version="2.1.0" />
+    <PackageReference Include="FFmpegInteropX.Desktop.FFmpeg" Version="8.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\LICENSE-ADDITIONAL-PERMISSION.txt" Link="LICENSE-ADDITIONAL-PERMISSION.txt" CopyToOutputDirectory="PreserveNewest" />
+    <!-- アイコンは tools/IconBuilder で元画像（リポジトリ直下の アイコン.png）から生成する -->
+    <Content Include="Assets\AppIcon.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\AppIcon-*.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MediaViewer.Core\MediaViewer.Core.csproj" />
+    <ProjectReference Include="..\MediaViewer.Imaging\MediaViewer.Imaging.csproj" />
+  </ItemGroup>
+
+</Project>

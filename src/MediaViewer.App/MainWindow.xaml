@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="MediaViewer.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="MediaViewer">
+
+    <Grid x:Name="RootGrid"
+          Background="#FF101010"
+          AllowDrop="True"
+          DragOver="OnDragOver"
+          Drop="OnDrop"
+          PreviewKeyDown="OnPreviewKeyDown">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- タイトルバー：アイコン＋メニュー（右側の最小化・最大化・閉じるはOSが描画） -->
+        <TitleBar x:Name="AppTitleBar" Grid.Row="0">
+            <TitleBar.RightHeader>
+                <TextBlock x:Name="TitleFileName"
+                           MaxWidth="360"
+                           Margin="12,0"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           Opacity="0.75"
+                           TextTrimming="CharacterEllipsis" />
+            </TitleBar.RightHeader>
+            <TitleBar.LeftHeader>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="ms-appx:///Assets/AppIcon-32.png" Width="16" Height="16" Margin="14,0,6,0" VerticalAlignment="Center" />
+                <MenuBar x:Name="AppMenuBar" VerticalAlignment="Center">
+                    <MenuBarItem Title="ファイル">
+                        <MenuFlyoutItem Text="開く..." KeyboardAcceleratorTextOverride="Ctrl+O" Click="OnOpenClick" />
+                        <MenuFlyoutItem Text="変換..." IsEnabled="False" />
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem Text="終了" Click="OnExitClick" />
+                    </MenuBarItem>
+                    <MenuBarItem Title="表示">
+                        <MenuFlyoutItem Text="表示倍率リセット" KeyboardAcceleratorTextOverride="Ctrl+0" Click="OnFitClick" />
+                        <MenuFlyoutItem Text="フルスクリーン" KeyboardAcceleratorTextOverride="F11" Click="OnFullScreenClick" />
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem x:Name="MenuPrevious" Text="前へ" KeyboardAcceleratorTextOverride="PageUp" Click="OnPreviousClick" />
+                        <MenuFlyoutItem x:Name="MenuNext" Text="次へ" KeyboardAcceleratorTextOverride="PageDown" Click="OnNextClick" />
+                        <MenuFlyoutSubItem Text="移動フィルター">
+                            <RadioMenuFlyoutItem x:Name="MenuFilterAll" Text="すべて" GroupName="NavFilter" IsChecked="True" Tag="All" Click="OnFilterClick" />
+                            <RadioMenuFlyoutItem x:Name="MenuFilterImages" Text="画像のみ" GroupName="NavFilter" Tag="Images" Click="OnFilterClick" />
+                            <RadioMenuFlyoutItem x:Name="MenuFilterVideos" Text="動画のみ" GroupName="NavFilter" Tag="Videos" Click="OnFilterClick" />
+                            <RadioMenuFlyoutItem x:Name="MenuFilterAudio" Text="音声のみ" GroupName="NavFilter" Tag="Audio" Click="OnFilterClick" />
+                        </MenuFlyoutSubItem>
+                    </MenuBarItem>
+                    <MenuBarItem Title="再生">
+                        <MenuFlyoutItem x:Name="MenuPlayPause" Text="再生／一時停止" KeyboardAcceleratorTextOverride="Space" Click="OnPlayPauseClick" />
+                        <MenuFlyoutItem x:Name="MenuStop" Text="停止" Click="OnStopClick" />
+                        <MenuFlyoutSeparator />
+                        <ToggleMenuFlyoutItem x:Name="MenuMute" Text="ミュート" KeyboardAcceleratorTextOverride="M" Click="OnMuteMenuClick" />
+                        <MenuFlyoutItem Text="音量を上げる" KeyboardAcceleratorTextOverride="↑" Click="OnVolumeUpClick" />
+                        <MenuFlyoutItem Text="音量を下げる" KeyboardAcceleratorTextOverride="↓" Click="OnVolumeDownClick" />
+                        <MenuFlyoutSubItem x:Name="MenuAudioTracks" Text="音声トラック" IsEnabled="False" />
+                    </MenuBarItem>
+                    <MenuBarItem Title="設定">
+                        <MenuFlyoutItem Text="更新設定..." IsEnabled="False" />
+                        <MenuFlyoutItem Text="一般設定..." IsEnabled="False" />
+                    </MenuBarItem>
+                    <MenuBarItem Title="ヘルプ">
+                        <MenuFlyoutItem Text="更新を確認" IsEnabled="False" />
+                        <MenuFlyoutItem Text="色管理の診断情報..." Click="OnDiagnosticsClick" />
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem Text="このアプリについて" Click="OnAboutClick" />
+                    </MenuBarItem>
+                </MenuBar>
+                </StackPanel>
+            </TitleBar.LeftHeader>
+        </TitleBar>
+
+        <!-- 中央：共通ビューワー（画像・動画・アルバムアートは同じ SwapChainPanel に描画） -->
+        <Grid x:Name="ViewerHost" Grid.Row="1">
+            <SwapChainPanel x:Name="RenderPanel"
+                            SizeChanged="OnRenderPanelSizeChanged"
+                            CompositionScaleChanged="OnCompositionScaleChanged" />
+
+            <FontIcon x:Name="MusicNoteIcon"
+                      Glyph="&#xEC4F;"
+                      FontSize="160"
+                      Opacity="0.45"
+                      Margin="0,0,0,96"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      IsHitTestVisible="False"
+                      Visibility="Collapsed" />
+
+            <TextBlock x:Name="AudioFileName"
+                       Visibility="Collapsed"
+                       IsHitTestVisible="False"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Bottom"
+                       Margin="24,0,24,32"
+                       FontSize="18"
+                       TextTrimming="CharacterEllipsis"
+                       Opacity="0.9" />
+
+            <!-- 入力層：ホイール・ドラッグ・ピンチ・ダブルタップ・スワイプを受ける。
+                 キーボード操作を常に受けられるよう、フォーカスを持てるコントロールにしている -->
+            <ContentControl x:Name="InputLayer"
+                  Background="Transparent"
+                  IsTabStop="True"
+                  UseSystemFocusVisuals="False"
+                  HorizontalContentAlignment="Stretch"
+                  VerticalContentAlignment="Stretch"
+                  AutomationProperties.Name="ビューワー"
+                  ManipulationMode="TranslateX,TranslateY,Scale"
+                  PointerWheelChanged="OnInputPointerWheelChanged"
+                  PointerPressed="OnInputPointerPressed"
+                  PointerMoved="OnInputPointerMoved"
+                  PointerReleased="OnInputPointerReleased"
+                  PointerCanceled="OnInputPointerReleased"
+                  PointerCaptureLost="OnInputPointerReleased"
+                  ManipulationStarted="OnInputManipulationStarted"
+                  ManipulationDelta="OnInputManipulationDelta"
+                  ManipulationCompleted="OnInputManipulationCompleted"
+                  DoubleTapped="OnInputDoubleTapped"
+                  Tapped="OnInputTapped" />
+
+            <StackPanel x:Name="Placeholder"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="16">
+                <FontIcon Glyph="&#xE8E5;" FontSize="48" Opacity="0.5" />
+                <TextBlock Text="ファイルを開くか、ここへドラッグ＆ドロップしてください" Opacity="0.7" />
+                <Button HorizontalAlignment="Center" Content="ファイルを開く..." Click="OnOpenClick" />
+            </StackPanel>
+
+            <ProgressRing x:Name="LoadingRing" Width="40" Height="40" IsActive="False" IsHitTestVisible="False" />
+
+            <InfoBar x:Name="MessageBar"
+                     VerticalAlignment="Top"
+                     Margin="12"
+                     IsOpen="False"
+                     Severity="Error" />
+        </Grid>
+
+        <!-- 下部：コントロールバー（フルスクリーン時は映像の上に重ねて自動非表示） -->
+        <Grid x:Name="ControlBar"
+              Grid.Row="2"
+              Padding="8,6"
+              ColumnSpacing="2"
+              Background="#FF1C1C1C"
+              PointerEntered="OnControlBarPointerEntered"
+              PointerExited="OnControlBarPointerExited">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="PreviousButton" AutomationProperties.Name="前のファイル" Grid.Column="0" Style="{StaticResource SubtleButtonStyle}" Click="OnPreviousClick" ToolTipService.ToolTip="前のファイル (PageUp)">
+                <FontIcon Glyph="&#xE892;" FontSize="16" />
+            </Button>
+            <Button x:Name="PlayPauseButton" AutomationProperties.Name="再生／一時停止" Grid.Column="1" Style="{StaticResource SubtleButtonStyle}" Click="OnPlayPauseClick" ToolTipService.ToolTip="再生／一時停止 (Space)">
+                <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE768;" FontSize="16" />
+            </Button>
+            <Button x:Name="StopButton" AutomationProperties.Name="停止" Grid.Column="2" Style="{StaticResource SubtleButtonStyle}" Click="OnStopClick" ToolTipService.ToolTip="停止">
+                <FontIcon Glyph="&#xE71A;" FontSize="16" />
+            </Button>
+            <Button x:Name="NextButton" AutomationProperties.Name="次のファイル" Grid.Column="3" Style="{StaticResource SubtleButtonStyle}" Click="OnNextClick" ToolTipService.ToolTip="次のファイル (PageDown)">
+                <FontIcon Glyph="&#xE893;" FontSize="16" />
+            </Button>
+
+            <TextBlock x:Name="PositionText" Grid.Column="4" Margin="8,0,4,0" VerticalAlignment="Center" FontSize="12" Text="0:00" />
+            <Slider x:Name="SeekSlider" AutomationProperties.Name="再生位置"
+                    Grid.Column="5"
+                    VerticalAlignment="Center"
+                    Minimum="0"
+                    Maximum="1"
+                    StepFrequency="0.1"
+                    IsThumbToolTipEnabled="False"
+                    ValueChanged="OnSeekSliderValueChanged" />
+            <TextBlock x:Name="DurationText" Grid.Column="6" Margin="4,0,8,0" VerticalAlignment="Center" FontSize="12" Text="0:00" />
+
+            <Button x:Name="MuteButton" AutomationProperties.Name="ミュート" Grid.Column="7" Style="{StaticResource SubtleButtonStyle}" Click="OnMuteClick" ToolTipService.ToolTip="ミュート (M)">
+                <FontIcon x:Name="MuteIcon" Glyph="&#xE767;" FontSize="16" />
+            </Button>
+            <Slider x:Name="VolumeSlider" AutomationProperties.Name="音量"
+                    Grid.Column="8"
+                    Width="96"
+                    VerticalAlignment="Center"
+                    Minimum="0"
+                    Maximum="100"
+                    Value="100"
+                    ValueChanged="OnVolumeSliderValueChanged" />
+
+            <DropDownButton x:Name="AudioTrackButton" AutomationProperties.Name="音声トラック" Grid.Column="9" Visibility="Collapsed" ToolTipService.ToolTip="音声トラック">
+                <FontIcon Glyph="&#xE8D6;" FontSize="16" />
+                <DropDownButton.Flyout>
+                    <MenuFlyout x:Name="AudioTrackFlyout" />
+                </DropDownButton.Flyout>
+            </DropDownButton>
+
+            <DropDownButton x:Name="FilterButton" AutomationProperties.Name="前後移動の対象" Grid.Column="10" ToolTipService.ToolTip="前後移動の対象">
+                <TextBlock x:Name="FilterText" Text="すべて" FontSize="12" />
+                <DropDownButton.Flyout>
+                    <MenuFlyout>
+                        <RadioMenuFlyoutItem x:Name="BarFilterAll" Text="すべて" GroupName="BarFilter" IsChecked="True" Tag="All" Click="OnFilterClick" />
+                        <RadioMenuFlyoutItem x:Name="BarFilterImages" Text="画像のみ" GroupName="BarFilter" Tag="Images" Click="OnFilterClick" />
+                        <RadioMenuFlyoutItem x:Name="BarFilterVideos" Text="動画のみ" GroupName="BarFilter" Tag="Videos" Click="OnFilterClick" />
+                        <RadioMenuFlyoutItem x:Name="BarFilterAudio" Text="音声のみ" GroupName="BarFilter" Tag="Audio" Click="OnFilterClick" />
+                    </MenuFlyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
+
+            <Button x:Name="FitButton" AutomationProperties.Name="フィット表示" Grid.Column="11" Style="{StaticResource SubtleButtonStyle}" Click="OnFitClick" ToolTipService.ToolTip="フィット表示 (Ctrl+0)">
+                <FontIcon Glyph="&#xE9A6;" FontSize="16" />
+            </Button>
+            <Button x:Name="FullScreenButton" AutomationProperties.Name="フルスクリーン" Grid.Column="12" Style="{StaticResource SubtleButtonStyle}" Click="OnFullScreenClick" ToolTipService.ToolTip="フルスクリーン (F11)">
+                <FontIcon x:Name="FullScreenIcon" Glyph="&#xE740;" FontSize="16" />
+            </Button>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,49 @@
+MediaViewer（仮称） サードパーティ通知
+==========================================
+
+本ソフトウェア本体は GNU General Public License v3.0 以降で提供されます（LICENSE を参照）。
+Windows App SDK とのリンクについて、GPLv3 第7条に基づく追加許可を付しています（LICENSE-ADDITIONAL-PERMISSION.txt を参照）。
+本ソフトウェアには以下の外部ライブラリが含まれます。各ライブラリはそれぞれのライセンスに従います。
+（開発中のため、配布前に各ライセンス全文の同梱と内容の最終確認を行います。）
+
+------------------------------------------------------------
+.NET Runtime
+  著作権者: .NET Foundation and Contributors
+  ライセンス: MIT License
+  https://github.com/dotnet/runtime
+
+Windows App SDK（WinUI 3 を含む）
+  著作権者: Microsoft Corporation
+  ライセンス: Microsoft Software License Terms（Microsoft Windows App SDK）
+  https://github.com/microsoft/windowsappsdk
+
+C#/WinRT（WinRT.Runtime）
+  著作権者: Microsoft Corporation
+  ライセンス: MIT License
+  https://github.com/microsoft/cswinrt
+
+Microsoft Edge WebView2（Windows App SDK の依存として同梱）
+  著作権者: Microsoft Corporation
+  ライセンス: パッケージ同梱の LICENSE.txt に従う
+  https://aka.ms/webview
+
+FFmpegInteropX
+  著作権者: FFmpegInteropX contributors
+  ライセンス: Apache License 2.0
+  https://github.com/ffmpeginteropx/FFmpegInteropX
+
+FFmpeg（FFmpegInteropX.Desktop.FFmpeg 8.1.2 に含まれるデコード用ライブラリ）
+  ライセンス: GNU Lesser General Public License v2.1 以降
+  https://ffmpeg.org/
+  同梱の依存ライブラリ: dav1d（BSD 2-Clause）、zlib（zlib License）、bzip2（bzip2 License）、
+  libiconv（LGPL）、liblzma（パブリックドメイン／0BSD）、libxml2（MIT）、OpenSSL（Apache License 2.0）
+
+Vortice.Windows（Vortice.Direct2D1 / Direct3D11 / DXGI / Mathematics）
+  著作権者: Amer Koleci and Contributors
+  ライセンス: MIT License
+  https://github.com/amerkoleci/Vortice.Windows
+
+SharpGen.Runtime
+  著作権者: SharpGenTools contributors
+  ライセンス: MIT License
+  https://github.com/SharpGenTools/SharpGenTools
