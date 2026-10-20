@@ -1,6 +1,9 @@
 # 改行コードはリポジトリ内で LF に正規化し、チェックアウト時は環境に合わせる
 * text=auto
 
+# シェルスクリプトは Windows でチェックアウトしても LF のまま（bash で実行するため）
+*.sh text eol=lf
+
 # バイナリ
 *.png binary
 *.jpg binary

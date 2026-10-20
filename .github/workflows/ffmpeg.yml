@@ -1,0 +1,78 @@
+# 同梱用の FFmpeg（変換に必要な機能だけ）をビルドし、配布物の部品として
+# プレリリース（自動更新の対象外）に添付する。アプリのリリースはここから取得する。
+name: FFmpeg ビルド
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: ビルド番号（同じ FFmpeg 版を作り直すときに増やす）
+        required: true
+        default: "1"
+  push:
+    branches: [main]
+    paths:
+      - build/ffmpeg/**
+      - .github/workflows/ffmpeg.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            base-devel
+            p7zip
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-nasm
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-x264
+            mingw-w64-ucrt-x86_64-libvpx
+            mingw-w64-ucrt-x86_64-opus
+            mingw-w64-ucrt-x86_64-lame
+            mingw-w64-ucrt-x86_64-libvorbis
+            mingw-w64-ucrt-x86_64-libwebp
+            mingw-w64-ucrt-x86_64-dav1d
+            mingw-w64-ucrt-x86_64-zlib
+            mingw-w64-ucrt-x86_64-bzip2
+            mingw-w64-ucrt-x86_64-libiconv
+
+      - name: FFmpeg をビルド
+        env:
+          BUILD_REVISION: ${{ github.event.inputs.revision || '1' }}
+        run: ./build/ffmpeg/build.sh
+
+      # GPL のため、同梱する GPL／LGPL の外部ライブラリのソースも同じリリースに添付する
+      - name: 外部ライブラリのソースを取得
+        run: |
+          mkdir -p build/ffmpeg/out/sources
+          cd build/ffmpeg/out/sources
+          for pkg in x264 lame libiconv libvpx opus libvorbis libogg libwebp dav1d; do
+            ver=$(pacman -Q "mingw-w64-ucrt-x86_64-$pkg" | awk '{print $2}')
+            curl -fsSL --retry 3 -O "https://repo.msys2.org/mingw/sources/mingw-w64-$pkg-$ver.src.tar.zst" || echo "取得できません: $pkg $ver"
+          done
+          ls -la
+
+      - name: プレリリースに添付
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $pkg = $env:PACKAGE
+          $tag = $pkg -replace '-win64$', ''
+          $notes = "メディアビューワーに同梱する FFmpeg のビルドです（アプリ本体のリリースではありません）。`n`nライセンスとソースの入手先は zip 内の licenses フォルダを参照してください。FFmpeg と外部ライブラリのソースもこのリリースに添付しています。"
+          gh release delete $tag --yes --cleanup-tag 2>$null
+          $assets = @("build/ffmpeg/out/$pkg.zip", "build/ffmpeg/out/$pkg.zip.sha256") + (Get-ChildItem build/ffmpeg/out -Filter 'ffmpeg-*.tar.xz').FullName + (Get-ChildItem build/ffmpeg/out/sources -Filter '*.src.tar.zst').FullName
+          gh release create $tag --prerelease --title "FFmpeg ビルド（配布物の部品）$tag" --notes $notes $assets

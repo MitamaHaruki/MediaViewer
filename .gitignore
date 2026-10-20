@@ -1,7 +1,6 @@
 # ビルド成果物
 bin/
 obj/
-[Bb]uild/
 [Pp]ublish/
 artifacts/
 *.user
@@ -43,6 +42,10 @@ testmedia/
 
 # 開発用にダウンロードした外部ツール（FFmpeg等）
 tools/ffmpeg-dl/
+
+# FFmpeg のビルド作業フォルダ
+build/ffmpeg/work/
+build/ffmpeg/out/
 
 # OS
 Thumbs.db
