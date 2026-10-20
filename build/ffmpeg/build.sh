@@ -33,7 +33,8 @@ tar -xf "$TARBALL"
 cd "ffmpeg-${FFMPEG_VERSION}"
 
 # ---- 構成 ----
-ENCODERS="libx264,libvpx_vp9,aac,libopus,libmp3lame,libvorbis,flac,pcm_s16le,pcm_s24le,mov_text,webvtt,libwebp,mjpeg,png"
+# configure での名前（ffmpeg -encoders での表示名とは違うものがある。mov_text は movtext）
+ENCODERS="libx264,libvpx_vp9,aac,libopus,libmp3lame,libvorbis,flac,pcm_s16le,pcm_s24le,movtext,webvtt,libwebp,mjpeg,png"
 MUXERS="mp4,mov,ipod,matroska,webm,avi,mp3,wav,flac,ogg,webp,null"
 FILTERS="scale,format,aformat,aresample,null,anull,transpose,hflip,vflip,setsar,pad,copy,acopy,fps"
 
