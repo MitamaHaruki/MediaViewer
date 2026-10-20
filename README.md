@@ -1,4 +1,4 @@
-# MediaViewer（仮称）
+# メディアビューワー（MediaViewer）
 
 画像・動画・音声を、同じ画面・同じ操作で扱う Windows 向けの軽量メディアビューワーです。
 画像の色管理（埋め込みICC・広色域・HDR／自動色管理）を最重要の品質要件としています。
@@ -8,7 +8,7 @@
 - 対象OS：Windows 11 24H2 以降（x64）
 - ライセンス：GNU General Public License v3.0 以降（[LICENSE](LICENSE)）。Windows App SDK とのリンクについて GPLv3 第7条の追加許可あり（[LICENSE-ADDITIONAL-PERMISSION.txt](LICENSE-ADDITIONAL-PERMISSION.txt)）
 
-> 現在は開発中です。正式名称は未決定です。
+> 現在は開発中です。
 
 ## 主な機能（現時点）
 

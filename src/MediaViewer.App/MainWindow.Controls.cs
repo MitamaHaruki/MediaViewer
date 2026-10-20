@@ -311,7 +311,7 @@ public sealed partial class MainWindow
             Height = 48,
         });
         var names = new StackPanel();
-        names.Children.Add(new TextBlock { Text = $"{AppName}（仮称）", FontSize = 20, FontWeight = FontWeights.SemiBold });
+        names.Children.Add(new TextBlock { Text = AppName, FontSize = 20, FontWeight = FontWeights.SemiBold });
         names.Children.Add(new TextBlock { Text = $"バージョン {version}", Opacity = 0.8 });
         header.Children.Add(names);
         panel.Children.Add(header);

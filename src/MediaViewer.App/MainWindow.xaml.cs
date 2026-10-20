@@ -24,7 +24,7 @@ namespace MediaViewer.App;
 /// </summary>
 public sealed partial class MainWindow : Window
 {
-    private const string AppName = "MediaViewer";
+    private const string AppName = "メディアビューワー";
     private const double AudioCaptionHeight = 96;
     private const double AlbumArtMaxExtent = 720;
     private const int AlbumArtMaxPixels = 1024;

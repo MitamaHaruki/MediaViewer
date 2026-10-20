@@ -3,7 +3,7 @@
     x:Class="MediaViewer.App.ConversionWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="変換 - MediaViewer">
+    Title="変換 - メディアビューワー">
 
     <Grid Background="#FF161616" Padding="24,20" RowSpacing="16">
         <Grid.RowDefinitions>

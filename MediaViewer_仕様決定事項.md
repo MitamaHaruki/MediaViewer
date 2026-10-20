@@ -15,6 +15,10 @@
 | D2 | UI技術 | **WinUI 3（Windows App SDK）** を採用。Phase 1の技術検証で重大な問題が出た場合のみ、WPF＋自前Direct3D 11描画面へ戻すことを再協議する | 確定 | §1 |
 | D2a | 動画・音声再生 | Windows標準の再生エンジン（MediaPlayer、フレームサーバーモード）＋FFmpegInteropX。映像フレームはGPU上で画像と同じ描画経路（scRGBスワップチェーン）へ渡す。Phase 1で動作・負荷を検証済み（docs/Phase1_検証報告.md）。LibVLC 4 は正式版未リリースのため不採用 | 提案中（報告の承認待ち） | §1, §7 |
 | D7 | GPLとWindows App SDKの組み合わせ | 本体ライセンスに GPLv3 第7条の「追加許可（リンク例外）」を付け、Windows App SDK（WinUI 3 を含む）・WebView2 SDK との結合物の頒布を許可する（LICENSE-ADDITIONAL-PERMISSION.txt） | 確定 | §15 |
+| D9 | 正式名称・リポジトリ | 正式なアプリ名は「メディアビューワー」。公開リポジトリは GitHub の `MitamaHaruki/MediaViewer`。コミットの作者メールは GitHub の非公開アドレス（noreply）を使う | 確定 | 冒頭, §10.1 |
+| D10 | インストール先と更新方式 | インストール先は `C:\Program Files\MediaViewer\`（全ユーザー共通）。インストーラーは MSI（WiX v5）。Program Files への書き込みには管理者権限が必要なため、更新の適用時に毎回 UAC の確認が出る（§10.3「管理者権限が必要な構成を採る場合は理由を明示」に対し、利用者の指定による）。更新は自作の Updater が MSI を適用し、起動確認に失敗したら直前の版に戻す | 確定 | §1, §10 |
+| D11 | 更新の署名 | 更新ファイル（MSI）に ECDSA P-256 で署名し、公開鍵をアプリに埋め込んで検証する。秘密鍵は GitHub Actions の Secrets に登録し、バックアップは開発者が保管する | 確定 | §10.2-6, §10.3 |
+| D12 | 配布用 FFmpeg | 必要な機能だけを入れた FFmpeg を GitHub Actions でビルドして同梱する（Phase 4 報告 §3 の構成） | 確定 | §9.3, §11 |
 | D8 | アプリアイコン | リポジトリ直下の `アイコン.png` を採用。縁のゴミを除去し、tools/IconBuilder で .ico と各サイズのPNGを生成する | 確定 | §2.1, §2.3 |
 | D3 | アプリのライセンス | **GPL-3.0-or-later** | 確定 | §9.3, §15 |
 | D4 | コード署名証明書 | 当面なし。更新パッケージの真正性は自前の署名鍵（公開鍵をアプリに埋め込み）で検証する | 確定 | §10.2, §10.3 |

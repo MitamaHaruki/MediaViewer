@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Platforms>x64</Platforms>
     <Version>0.1.0</Version>
+    <Product>メディアビューワー</Product>
+    <Company>はるたまプロジェクト</Company>
     <Authors>三玉春樹 / はるたまプロジェクト</Authors>
     <Copyright>Copyright (C) 2026 三玉春樹 / はるたまプロジェクト</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>

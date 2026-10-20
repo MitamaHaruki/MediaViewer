@@ -1,0 +1,39 @@
+# main への push と Pull Request で、ビルドと自動テストを行う（仕様 §10.4）
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: ビルド
+        run: dotnet build MediaViewer.slnx -c Release
+
+      # GPU のない実行環境では Direct3D のソフトウェア描画（WARP）で色変換のテストを行う。
+      # FFmpeg を使う結合テストは FFmpeg がないため結論保留（スキップ）になる。
+      - name: テスト
+        run: dotnet test tests/MediaViewer.Tests/MediaViewer.Tests.csproj -c Release --no-build --logger "trx;LogFileName=results.trx"
+
+      - name: テスト結果を保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: tests/MediaViewer.Tests/TestResults/*.trx
