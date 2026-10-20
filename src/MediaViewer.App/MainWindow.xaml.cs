@@ -52,6 +52,7 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
+        ApplyCaptionButtonColors();
         AppWindow.Title = AppName;
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
         if (File.Exists(iconPath)) AppWindow.SetIcon(iconPath);
@@ -83,6 +84,24 @@ public sealed partial class MainWindow : Window
         };
         ControlBar.SizeChanged += (_, _) => UpdateCompactLayout();
         UpdateUi();
+    }
+
+    /// <summary>
+    /// 最小化・最大化・閉じるボタンを暗い背景向けの色にする。Windows がライトモードだと
+    /// 既定では黒いボタンになり、アプリの暗い背景に溶けて見えないため。
+    /// </summary>
+    private void ApplyCaptionButtonColors()
+    {
+        var bar = AppWindow.TitleBar;
+        bar.PreferredTheme = TitleBarTheme.Dark;
+        bar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
+        bar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
+        bar.ButtonForegroundColor = Microsoft.UI.Colors.White;
+        bar.ButtonInactiveForegroundColor = Windows.UI.Color.FromArgb(0xFF, 0x8A, 0x8A, 0x8A);
+        bar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
+        bar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF);
+        bar.ButtonPressedForegroundColor = Microsoft.UI.Colors.White;
+        bar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(0x55, 0xFF, 0xFF, 0xFF);
     }
 
     /// <summary>起動引数や関連付けから渡されたファイルを開く。</summary>
