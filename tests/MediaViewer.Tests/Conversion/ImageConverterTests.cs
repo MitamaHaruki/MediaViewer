@@ -227,10 +227,30 @@ public sealed class ImageConverterTests
 
     // ---- WebP ----
 
+    /// <summary>1×1 の可逆 WebP（赤）。WIC で WebP を読めるか確かめるのに使う。</summary>
+    private const string TinyWebP = "UklGRhwAAABXRUJQVlA4TA8AAAAvAAAAAAcQ/Y/+ByKi/wEA";
+
+    /// <summary>
+    /// WebP の変換には FFmpeg、変換後の確認（読み戻し）には WIC の WebP デコーダーが要る。
+    /// Windows 11 は標準で WebP を読めるが、Windows Server（GitHub Actions など）には無いことがある。
+    /// </summary>
+    private static void RequireWebPSupport()
+    {
+        if (FfmpegTools.Locate() is null) Assert.Inconclusive("FFmpeg が見つかりません");
+        try
+        {
+            ReadPixels(Save(System.Convert.FromBase64String(TinyWebP), ".webp"));
+        }
+        catch (Exception e) when (e is SharpGen.Runtime.SharpGenException or InvalidDataException)
+        {
+            Assert.Inconclusive($"この環境の WIC は WebP を読めません（{e.Message}）");
+        }
+    }
+
     [TestMethod]
     public async Task WebPにICCを埋め込む()
     {
-        if (FfmpegTools.Locate() is null) Assert.Inconclusive("FFmpeg が見つかりません");
+        RequireWebPSupport();
         var p3 = IccProfileBuilder.BuildMatrixTrc(ColorMath.DisplayP3, 2.2, "P3 test");
         var input = Save(TestImageFiles.Encode(Wic, ContainerFormat.Png, PixelFormat.Format32bppBGRA, 4, 3,
             Enumerable.Repeat(Bgra((10, 200, 30, 255)), 12).SelectMany(x => x).ToArray(), p3), ".png");
@@ -248,7 +268,7 @@ public sealed class ImageConverterTests
     [TestMethod]
     public async Task 透過のあるWebPは透過を保つ()
     {
-        if (FfmpegTools.Locate() is null) Assert.Inconclusive("FFmpeg が見つかりません");
+        RequireWebPSupport();
         var (output, _) = await Convert(AlphaPng(), ConversionFormat.WebP);
         var (_, _, px) = ReadPixels(output);
         Assert.AreEqual(255, px[3]);
