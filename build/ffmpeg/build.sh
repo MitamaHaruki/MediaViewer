@@ -86,6 +86,15 @@ done
 
 # ライセンスと、ソースの入手先（GPL の「対応するソース」）の情報
 cp COPYING.GPLv2 LICENSE.md "$STAGE/licenses/" 2>/dev/null || cp LICENSE.md "$STAGE/licenses/"
+# 同梱する外部ライブラリのライセンス文（BSD 系は配布物に著作権表示を含める必要がある）
+for pkg in x264 libvpx opus lame libvorbis libogg libwebp dav1d zlib bzip2 libiconv gcc-libs libwinpthread winpthreads; do
+  if [ -d "/ucrt64/share/licenses/$pkg" ]; then
+    mkdir -p "$STAGE/licenses/$pkg"
+    cp -r "/ucrt64/share/licenses/$pkg/." "$STAGE/licenses/$pkg/"
+  else
+    echo "ライセンス文が見つかりません：$pkg"
+  fi
+done
 {
   echo "FFmpeg ${FFMPEG_VERSION}（メディアビューワー同梱用ビルド ${BUILD_REVISION}）"
   echo

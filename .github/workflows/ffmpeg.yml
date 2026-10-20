@@ -18,6 +18,11 @@ on:
 permissions:
   contents: write
 
+# 同じプレリリースを作り直すため、新しい実行が始まったら前の実行は取り消す
+concurrency:
+  group: ffmpeg-build
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: windows-latest
