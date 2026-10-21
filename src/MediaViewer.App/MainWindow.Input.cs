@@ -75,6 +75,7 @@ public sealed partial class MainWindow
         }
         if (_mousePanPointer != e.Pointer.PointerId) return;
         var position = e.GetCurrentPoint(InputLayer).Position;
+        Trace($"pan move {position}");
         _viewport.Pan(position.X - _mousePanLast.X, position.Y - _mousePanLast.Y);
         _mousePanLast = position;
         e.Handled = true;
@@ -90,6 +91,7 @@ public sealed partial class MainWindow
         }
         if (_mousePanPointer == e.Pointer.PointerId)
         {
+            Trace("pan end");
             InputLayer.ReleasePointerCapture(e.Pointer);
             _mousePanPointer = null;
         }
@@ -252,6 +254,16 @@ public sealed partial class MainWindow
     }
 
     private static readonly bool s_traceInput = Environment.GetEnvironmentVariable("MEDIAVIEWER_TRACE_INPUT") == "1";
+
+    /// <summary>調査用：画面全体に届いた入力を、処理済みのものも含めて記録する（MEDIAVIEWER_TRACE_INPUT=1 のときだけ）。</summary>
+    private void TraceRootInput()
+    {
+        if (!s_traceInput || Content is not UIElement root) return;
+        root.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler((_, e) =>
+            Trace($"root pressed {e.Pointer.PointerDeviceType} src={(e.OriginalSource as FrameworkElement)?.Name ?? e.OriginalSource?.GetType().Name} handled={e.Handled}")), true);
+        root.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler((_, e) =>
+            Trace($"root wheel src={(e.OriginalSource as FrameworkElement)?.Name ?? e.OriginalSource?.GetType().Name} handled={e.Handled}")), true);
+    }
 
     private static void Trace(string message)
     {

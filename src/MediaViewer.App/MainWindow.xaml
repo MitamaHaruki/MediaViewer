@@ -102,9 +102,10 @@
                        Opacity="0.9" />
 
             <!-- 入力層：ホイール・ドラッグ・ピンチ・ダブルタップ・スワイプを受ける。
-                 キーボード操作を常に受けられるよう、フォーカスを持てるコントロールにしている -->
+                 キーボード操作を常に受けられるよう、フォーカスを持てるコントロールにしている。
+                 ContentControl の既定のテンプレートは背景を描かず、空のままではマウスやタッチが下の描画面へ
+                 素通りするため、透明な背景の Border を中身に置いて入力を受け止める（イベントは InputLayer へ伝わる） -->
             <ContentControl x:Name="InputLayer"
-                  Background="Transparent"
                   IsTabStop="True"
                   UseSystemFocusVisuals="False"
                   HorizontalContentAlignment="Stretch"
@@ -121,7 +122,9 @@
                   ManipulationDelta="OnInputManipulationDelta"
                   ManipulationCompleted="OnInputManipulationCompleted"
                   DoubleTapped="OnInputDoubleTapped"
-                  Tapped="OnInputTapped" />
+                  Tapped="OnInputTapped">
+                <Border x:Name="InputSurface" Background="Transparent" />
+            </ContentControl>
 
             <StackPanel x:Name="Placeholder"
                         HorizontalAlignment="Center"
