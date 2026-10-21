@@ -67,6 +67,7 @@
                     </MenuBarItem>
                     <MenuBarItem Title="ヘルプ">
                         <MenuFlyoutItem x:Name="MenuCheckUpdates" Text="更新を確認" Click="OnCheckUpdatesClick" />
+                        <MenuFlyoutItem Text="操作方法..." Click="OnOperationsClick" />
                         <MenuFlyoutItem Text="色管理の診断情報..." Click="OnDiagnosticsClick" />
                         <MenuFlyoutSeparator />
                         <MenuFlyoutItem Text="このアプリについて" Click="OnAboutClick" />

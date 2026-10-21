@@ -23,6 +23,7 @@ public sealed partial class MainWindow
     private const string DeveloperText = "開発者：三玉春樹 / はるたまプロジェクト";
     private const string AccountLabel = "アカウント：";
     private const string AccountUrl = "https://x.com/MitamaHaruki";
+    private const string SourceUrl = "https://github.com/MitamaHaruki/MediaViewer";
 
     private static readonly SolidColorBrush BarBrushNormal = new(ColorHelper.FromArgb(0xFF, 0x1C, 0x1C, 0x1C));
     private static readonly SolidColorBrush BarBrushOverlay = new(ColorHelper.FromArgb(0xD9, 0x1C, 0x1C, 0x1C));
@@ -348,22 +349,103 @@ public sealed partial class MainWindow
             Margin = new Thickness(0, 12, 0, 0),
             Opacity = 0.8,
         });
-        var licenses = new HyperlinkButton { Content = "ライセンス情報（本体・外部ライブラリ）", Padding = new Thickness(0) };
-        licenses.Click += (_, _) => OpenLicenseFile();
-        panel.Children.Add(licenses);
+        // ライセンス本文・外部ライブラリのライセンス・ソースコードへの導線（仕様 §2.3、GPL）
+        panel.Children.Add(LicenseLink("ライセンス本文（GNU GPL v3）", "LICENSE.txt"));
+        panel.Children.Add(LicenseLink("外部ライブラリのライセンス", "THIRD-PARTY-NOTICES.txt"));
+        panel.Children.Add(LicenseLink("同梱の FFmpeg のライセンス", Path.Combine("ffmpeg", "licenses")));
+        panel.Children.Add(new HyperlinkButton { Content = "ソースコード（GitHub）", NavigateUri = new Uri(SourceUrl), Padding = new Thickness(0) });
 
         await ShowDialogAsync("このアプリについて", panel);
     }
 
-    private void OpenLicenseFile()
+    private HyperlinkButton LicenseLink(string text, string relativePath)
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "THIRD-PARTY-NOTICES.txt");
-        if (!File.Exists(path))
+        var link = new HyperlinkButton { Content = text, Padding = new Thickness(0) };
+        link.Click += (_, _) => OpenInstalledFile(relativePath);
+        return link;
+    }
+
+    /// <summary>インストール先のライセンス文書（ファイルは既定のアプリ、フォルダはエクスプローラー）を開く。</summary>
+    private void OpenInstalledFile(string relativePath)
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, relativePath);
+        try
         {
-            ShowMessage("ライセンス情報ファイルが見つかりません。", InfoBarSeverity.Warning);
-            return;
+            if (Directory.Exists(path))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe") { ArgumentList = { path }, UseShellExecute = false });
+            }
+            else if (File.Exists(path))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+            }
+            else
+            {
+                ShowMessage($"ライセンス情報が見つかりません（{relativePath}）。", InfoBarSeverity.Warning);
+            }
         }
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+        catch (Exception ex)
+        {
+            ShowMessage($"ライセンス情報を開けませんでした：{ex.Message}", InfoBarSeverity.Warning);
+        }
+    }
+
+    // ---- 操作方法 ----
+
+    private async void OnOperationsClick(object sender, RoutedEventArgs e)
+    {
+        var seek = (int)_seekStep.TotalSeconds;
+        (string Action, string Mouse, string Touch)[] rows =
+        [
+            ("ファイルを開く", "Ctrl+O、ドラッグ＆ドロップ", "「ファイルを開く」ボタン"),
+            ("拡大・縮小", "マウスホイール", "ピンチアウト／ピンチイン"),
+            ("移動（拡大中）", "左ドラッグ", "1本指でドラッグ"),
+            ("フィット ↔ 等倍", "ダブルクリック", "ダブルタップ"),
+            ("倍率を元に戻す", "Ctrl+0、フィットボタン", "フィットボタン"),
+            ("前／次のファイル", "PageUp／PageDown（画像は ← → も可）", "横にスワイプ（フィット表示のとき）"),
+            ("再生／一時停止", "Space", "再生ボタン"),
+            ("停止（先頭へ戻る）", "停止ボタン", "停止ボタン"),
+            ("リピートの ON／OFF", "R", "リピートボタン"),
+            ($"早送り・巻き戻し（{seek}秒）", "→／←（動画・音声）", "シークバー"),
+            ("音量／ミュート", "↑／↓、M", "音量スライダー、スピーカーボタン"),
+            ("フルスクリーン", "F11（Esc で戻る）", "フルスクリーンボタン"),
+        ];
+
+        var grid = new Grid { ColumnSpacing = 16, RowSpacing = 6 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        void AddRow(int row, string a, string b, string c, bool header)
+        {
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var cells = new[] { a, b, c };
+            for (var col = 0; col < cells.Length; col++)
+            {
+                var cell = new TextBlock
+                {
+                    Text = cells[col],
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = 240,
+                    FontWeight = header ? FontWeights.SemiBold : FontWeights.Normal,
+                    Opacity = header ? 0.8 : 1,
+                };
+                Grid.SetRow(cell, row);
+                Grid.SetColumn(cell, col);
+                grid.Children.Add(cell);
+            }
+        }
+        AddRow(0, "操作", "マウス・キーボード", "タッチ", header: true);
+        for (var i = 0; i < rows.Length; i++) AddRow(i + 1, rows[i].Action, rows[i].Mouse, rows[i].Touch, header: false);
+
+        var panel = new StackPanel { Spacing = 12 };
+        panel.Children.Add(grid);
+        panel.Children.Add(new TextBlock
+        {
+            Text = "早送り・巻き戻しの秒数は「設定 → 一般設定」で変更できます。フルスクリーンでは、操作しないと約5秒で操作バーが隠れます。",
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.75,
+        });
+        await ShowDialogAsync("操作方法", new ScrollViewer { Content = panel, MaxHeight = 520 }, maxWidth: 860);
     }
 
     private async void OnDiagnosticsClick(object sender, RoutedEventArgs e)
@@ -387,7 +469,7 @@ public sealed partial class MainWindow
         await ShowDialogAsync("色管理の診断情報", text);
     }
 
-    private async Task ShowDialogAsync(string title, UIElement content)
+    private async Task ShowDialogAsync(string title, UIElement content, double? maxWidth = null)
     {
         var dialog = new ContentDialog
         {
@@ -398,6 +480,8 @@ public sealed partial class MainWindow
             DefaultButton = ContentDialogButton.Close,
             RequestedTheme = ElementTheme.Dark,
         };
+        // 表のように横幅の要る内容は、ダイアログの既定の最大幅（548）を広げる
+        if (maxWidth is { } width) dialog.Resources["ContentDialogMaxWidth"] = width;
         await dialog.ShowAsync();
     }
 }

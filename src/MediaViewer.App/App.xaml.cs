@@ -36,6 +36,7 @@ public partial class App : Application
         var store = SettingsStore.CreateDefault();
         _window = new MainWindow(store, store.Load());
         _window.Activate();
+        PerfTrace.Log($"起動からウィンドウ表示まで {PerfTrace.SinceProcessStart():F0} ms");
 
         // 関連付け起動・起動引数のローカルファイルパス（仕様 §3.2）。多重起動は許可（仕様決定事項 D5）
         var path = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault(a => !a.StartsWith('-') && File.Exists(a));

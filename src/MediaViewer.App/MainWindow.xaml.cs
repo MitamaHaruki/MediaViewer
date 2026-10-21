@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using MediaViewer.App.Interop;
 using MediaViewer.App.Playback;
@@ -240,7 +241,9 @@ public sealed partial class MainWindow : Window
         if (_renderer is null) return;
         var s = RenderPanel.CompositionScaleX;
         _renderer.SetView((float)(_viewport.Scale * s), (float)(_viewport.OffsetX * s), (float)(_viewport.OffsetY * s));
+        var start = PerfTrace.Enabled ? Stopwatch.GetTimestamp() : 0;
         _renderer.Render();
+        if (PerfTrace.Enabled) PerfTrace.RecordRender(Stopwatch.GetElapsedTime(start).TotalMilliseconds);
         FitButton.IsEnabled = IsZoomable && !_viewport.IsAtFit;
     }
 
@@ -249,6 +252,7 @@ public sealed partial class MainWindow : Window
     private async Task OpenAsync(string path)
     {
         var generation = ++_openGeneration;
+        var openStart = Stopwatch.GetTimestamp();
         _openCts?.Cancel();
         _openCts = new CancellationTokenSource();
         var ct = _openCts.Token;
@@ -313,6 +317,8 @@ public sealed partial class MainWindow : Window
         {
             if (generation == _openGeneration)
             {
+                PerfTrace.FlushRenders();
+                PerfTrace.Log($"ファイルを開く {_currentKind} {Stopwatch.GetElapsedTime(openStart).TotalMilliseconds:F0} ms");
                 LoadingRing.IsActive = false;
                 UpdateUi();
                 FocusViewer();
