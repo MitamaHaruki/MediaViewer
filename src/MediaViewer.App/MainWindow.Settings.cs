@@ -36,6 +36,7 @@ public sealed partial class MainWindow
             SetFilter(settings.NavigationFilter);
             VolumeSlider.Value = Math.Round(settings.Volume * 100);
             SetMuted(settings.IsMuted);
+            SetRepeat(settings.RepeatEnabled);
             _seekStep = TimeSpan.FromSeconds(settings.SeekStepSeconds);
         }
         finally

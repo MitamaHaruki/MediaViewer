@@ -133,6 +133,7 @@ public sealed partial class MainWindow : Window
         {
             Volume = VolumeSlider.Value / 100.0,
             IsMuted = _isMuted,
+            IsRepeatEnabled = _isRepeat,
         };
         _playback.StateChanged += (_, _) => UpdateUi();
         _playback.PlaybackFailed += (_, message) => ShowMessage(message, InfoBarSeverity.Error);
@@ -518,6 +519,7 @@ public sealed partial class MainWindow : Window
         var state = _playback?.State ?? PlaybackState.Closed;
         PlayPauseButton.IsEnabled = StopButton.IsEnabled = SeekSlider.IsEnabled = playable;
         MenuPlayPause.IsEnabled = MenuStop.IsEnabled = playable;
+        RepeatButton.IsEnabled = MenuRepeat.IsEnabled = playable;
         PlayPauseIcon.Glyph = state == PlaybackState.Playing ? "" : "";
         FitButton.IsEnabled = IsZoomable && !_viewport.IsAtFit;
 

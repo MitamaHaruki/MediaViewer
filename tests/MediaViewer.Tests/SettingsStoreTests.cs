@@ -30,6 +30,7 @@ public sealed class SettingsStoreTests
         Assert.AreEqual(NavigationFilter.All, s.NavigationFilter);
         Assert.AreEqual(AppSettings.DefaultVolume, s.Volume);
         Assert.IsFalse(s.IsMuted);
+        Assert.IsFalse(s.RepeatEnabled, "リピートは初期値 OFF（終端で停止）");
         Assert.AreEqual(5, s.SeekStepSeconds);
         Assert.IsNull(s.Window);
         Assert.IsTrue(s.Update.AutoCheck);
@@ -48,6 +49,7 @@ public sealed class SettingsStoreTests
             s.NavigationFilter = NavigationFilter.Videos;
             s.Volume = 0.35;
             s.IsMuted = true;
+            s.RepeatEnabled = true;
             s.SeekStepSeconds = 10;
             s.Window = new WindowPlacement { X = 100, Y = -50, Width = 1200, Height = 800, IsMaximized = true };
             s.Update.LastCheckedUtc = checkedAt;
@@ -57,6 +59,7 @@ public sealed class SettingsStoreTests
         Assert.AreEqual(NavigationFilter.Videos, r.NavigationFilter);
         Assert.AreEqual(0.35, r.Volume, 1e-9);
         Assert.IsTrue(r.IsMuted);
+        Assert.IsTrue(r.RepeatEnabled);
         Assert.AreEqual(10, r.SeekStepSeconds);
         Assert.AreEqual(-50, r.Window!.Y);
         Assert.IsTrue(r.Window.IsMaximized);

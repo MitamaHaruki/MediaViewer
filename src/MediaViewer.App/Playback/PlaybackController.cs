@@ -15,7 +15,7 @@ internal enum PlaybackState
     Paused,
     /// <summary>ユーザーが停止した（先頭へ戻した）状態。</summary>
     Stopped,
-    /// <summary>自然に終端へ達した状態。次へ移動もリピートもしない（仕様 §7.2）。</summary>
+    /// <summary>自然に終端へ達した状態。次へは移動しない。リピートが ON なら終端に達せず先頭から繰り返す（仕様 §7.2）。</summary>
     Ended,
     Failed,
 }
@@ -72,7 +72,7 @@ internal sealed class PlaybackController : IDisposable
         };
         _player.CommandManager.IsEnabled = false;
         _player.VideoFrameAvailable += OnVideoFrameAvailable;
-        _player.MediaEnded += (_, _) => Post(() => SetState(PlaybackState.Ended));
+        _player.MediaEnded += (_, _) => Post(OnMediaEnded);
         _player.MediaFailed += (_, e) => Post(() =>
         {
             SetState(PlaybackState.Failed);
@@ -99,6 +99,16 @@ internal sealed class PlaybackController : IDisposable
     {
         get => _player.IsMuted;
         set => _player.IsMuted = value;
+    }
+
+    /// <summary>
+    /// リピート（今のファイルを終端から先頭へ戻して繰り返す）。MediaPlayer の繰り返し再生を使い、
+    /// ファイルを切り替えても設定は保たれる。
+    /// </summary>
+    public bool IsRepeatEnabled
+    {
+        get => _player.IsLoopingEnabled;
+        set => _player.IsLoopingEnabled = value;
     }
 
     public int SelectedAudioTrack =>
@@ -342,6 +352,18 @@ internal sealed class PlaybackController : IDisposable
         HasVideo = false;
         AudioTracks = [];
         SetState(PlaybackState.Closed);
+    }
+
+    private void OnMediaEnded()
+    {
+        // 繰り返し再生中は通常ここに来ないが、終端の通知が届いた場合も先頭から再生し直す
+        if (IsRepeatEnabled && _source is not null)
+        {
+            _player.PlaybackSession.Position = TimeSpan.Zero;
+            _player.Play();
+            return;
+        }
+        SetState(PlaybackState.Ended);
     }
 
     private void SetState(PlaybackState state)

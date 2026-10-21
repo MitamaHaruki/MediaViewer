@@ -32,6 +32,7 @@ public sealed partial class MainWindow
     private bool _pointerOverBar;
     private bool _seekDragging;
     private bool _isMuted;
+    private bool _isRepeat;
     private OverlappedPresenterState _restoreState = OverlappedPresenterState.Restored;
     private RectInt32 _restoreRect;
 
@@ -133,6 +134,21 @@ public sealed partial class MainWindow
     private void OnVolumeUpClick(object sender, RoutedEventArgs e) => VolumeSlider.Value = Math.Min(100, VolumeSlider.Value + VolumeStep);
 
     private void OnVolumeDownClick(object sender, RoutedEventArgs e) => VolumeSlider.Value = Math.Max(0, VolumeSlider.Value - VolumeStep);
+
+    private void OnRepeatClick(object sender, RoutedEventArgs e) => SetRepeat(RepeatButton.IsChecked == true);
+
+    private void OnRepeatMenuClick(object sender, RoutedEventArgs e) => SetRepeat(MenuRepeat.IsChecked);
+
+    /// <summary>リピートの ON／OFF。動画・音声を開いているときに使え、設定に保存する。</summary>
+    private void SetRepeat(bool repeat)
+    {
+        var changed = _isRepeat != repeat;
+        _isRepeat = repeat;
+        if (_playback is not null) _playback.IsRepeatEnabled = repeat;
+        RepeatButton.IsChecked = repeat;
+        MenuRepeat.IsChecked = repeat;
+        if (changed) SaveSettings(s => s.RepeatEnabled = repeat);
+    }
 
     private void SetMuted(bool muted)
     {
@@ -291,6 +307,7 @@ public sealed partial class MainWindow
         VolumeSlider.Visibility = width < 720 ? Visibility.Collapsed : Visibility.Visible;
         FilterButton.Visibility = width < 620 ? Visibility.Collapsed : Visibility.Visible;
         StopButton.Visibility = width < 480 ? Visibility.Collapsed : Visibility.Visible;
+        RepeatButton.Visibility = width < 480 ? Visibility.Collapsed : Visibility.Visible;
     }
 
     // ---- ダイアログ ----

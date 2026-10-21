@@ -55,6 +55,9 @@ public sealed class AppSettings
     public NavigationFilter NavigationFilter { get; set; } = NavigationFilter.All;
     public double Volume { get; set; } = DefaultVolume;
     public bool IsMuted { get; set; }
+
+    /// <summary>動画・音声を終端で先頭に戻して繰り返す（初期値 OFF。OFF なら終端で停止、仕様 §7.2）。</summary>
+    public bool RepeatEnabled { get; set; }
     public int SeekStepSeconds { get; set; } = 5;
     public WindowPlacement? Window { get; set; }
     public UpdateSettings Update { get; set; } = new();

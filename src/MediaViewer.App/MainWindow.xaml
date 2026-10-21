@@ -54,6 +54,7 @@
                     <MenuBarItem Title="再生">
                         <MenuFlyoutItem x:Name="MenuPlayPause" Text="再生／一時停止" KeyboardAcceleratorTextOverride="Space" Click="OnPlayPauseClick" />
                         <MenuFlyoutItem x:Name="MenuStop" Text="停止" Click="OnStopClick" />
+                        <ToggleMenuFlyoutItem x:Name="MenuRepeat" Text="リピート" KeyboardAcceleratorTextOverride="R" Click="OnRepeatMenuClick" />
                         <MenuFlyoutSeparator />
                         <ToggleMenuFlyoutItem x:Name="MenuMute" Text="ミュート" KeyboardAcceleratorTextOverride="M" Click="OnMuteMenuClick" />
                         <MenuFlyoutItem Text="音量を上げる" KeyboardAcceleratorTextOverride="↑" Click="OnVolumeUpClick" />
@@ -164,6 +165,7 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -187,22 +189,33 @@
                 <FontIcon Glyph="&#xE893;" FontSize="16" />
             </Button>
 
-            <TextBlock x:Name="PositionText" Grid.Column="4" Margin="8,0,4,0" VerticalAlignment="Center" FontSize="12" Text="0:00" />
+            <ToggleButton x:Name="RepeatButton" AutomationProperties.Name="リピート" Grid.Column="4" Padding="11,5" Click="OnRepeatClick" ToolTipService.ToolTip="リピート (R)">
+                <!-- OFF は他のボタンと同じく背景なし、ON はアクセントカラーで示す -->
+                <ToggleButton.Resources>
+                    <SolidColorBrush x:Key="ToggleButtonBackground" Color="Transparent" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrush" Color="Transparent" />
+                    <SolidColorBrush x:Key="ToggleButtonBackgroundDisabled" Color="Transparent" />
+                    <SolidColorBrush x:Key="ToggleButtonBorderBrushDisabled" Color="Transparent" />
+                </ToggleButton.Resources>
+                <FontIcon Glyph="&#xE8EE;" FontSize="16" />
+            </ToggleButton>
+
+            <TextBlock x:Name="PositionText" Grid.Column="5" Margin="8,0,4,0" VerticalAlignment="Center" FontSize="12" Text="0:00" />
             <Slider x:Name="SeekSlider" AutomationProperties.Name="再生位置"
-                    Grid.Column="5"
+                    Grid.Column="6"
                     VerticalAlignment="Center"
                     Minimum="0"
                     Maximum="1"
                     StepFrequency="0.1"
                     IsThumbToolTipEnabled="False"
                     ValueChanged="OnSeekSliderValueChanged" />
-            <TextBlock x:Name="DurationText" Grid.Column="6" Margin="4,0,8,0" VerticalAlignment="Center" FontSize="12" Text="0:00" />
+            <TextBlock x:Name="DurationText" Grid.Column="7" Margin="4,0,8,0" VerticalAlignment="Center" FontSize="12" Text="0:00" />
 
-            <Button x:Name="MuteButton" AutomationProperties.Name="ミュート" Grid.Column="7" Style="{StaticResource SubtleButtonStyle}" Click="OnMuteClick" ToolTipService.ToolTip="ミュート (M)">
+            <Button x:Name="MuteButton" AutomationProperties.Name="ミュート" Grid.Column="8" Style="{StaticResource SubtleButtonStyle}" Click="OnMuteClick" ToolTipService.ToolTip="ミュート (M)">
                 <FontIcon x:Name="MuteIcon" Glyph="&#xE767;" FontSize="16" />
             </Button>
             <Slider x:Name="VolumeSlider" AutomationProperties.Name="音量"
-                    Grid.Column="8"
+                    Grid.Column="9"
                     Width="96"
                     VerticalAlignment="Center"
                     Minimum="0"
@@ -210,14 +223,14 @@
                     Value="100"
                     ValueChanged="OnVolumeSliderValueChanged" />
 
-            <DropDownButton x:Name="AudioTrackButton" AutomationProperties.Name="音声トラック" Grid.Column="9" Visibility="Collapsed" ToolTipService.ToolTip="音声トラック">
+            <DropDownButton x:Name="AudioTrackButton" AutomationProperties.Name="音声トラック" Grid.Column="10" Visibility="Collapsed" ToolTipService.ToolTip="音声トラック">
                 <FontIcon Glyph="&#xE8D6;" FontSize="16" />
                 <DropDownButton.Flyout>
                     <MenuFlyout x:Name="AudioTrackFlyout" />
                 </DropDownButton.Flyout>
             </DropDownButton>
 
-            <DropDownButton x:Name="FilterButton" AutomationProperties.Name="前後移動の対象" Grid.Column="10" ToolTipService.ToolTip="前後移動の対象">
+            <DropDownButton x:Name="FilterButton" AutomationProperties.Name="前後移動の対象" Grid.Column="11" ToolTipService.ToolTip="前後移動の対象">
                 <TextBlock x:Name="FilterText" Text="すべて" FontSize="12" />
                 <DropDownButton.Flyout>
                     <MenuFlyout>
@@ -229,10 +242,10 @@
                 </DropDownButton.Flyout>
             </DropDownButton>
 
-            <Button x:Name="FitButton" AutomationProperties.Name="フィット表示" Grid.Column="11" Style="{StaticResource SubtleButtonStyle}" Click="OnFitClick" ToolTipService.ToolTip="フィット表示 (Ctrl+0)">
+            <Button x:Name="FitButton" AutomationProperties.Name="フィット表示" Grid.Column="12" Style="{StaticResource SubtleButtonStyle}" Click="OnFitClick" ToolTipService.ToolTip="フィット表示 (Ctrl+0)">
                 <FontIcon Glyph="&#xE9A6;" FontSize="16" />
             </Button>
-            <Button x:Name="FullScreenButton" AutomationProperties.Name="フルスクリーン" Grid.Column="12" Style="{StaticResource SubtleButtonStyle}" Click="OnFullScreenClick" ToolTipService.ToolTip="フルスクリーン (F11)">
+            <Button x:Name="FullScreenButton" AutomationProperties.Name="フルスクリーン" Grid.Column="13" Style="{StaticResource SubtleButtonStyle}" Click="OnFullScreenClick" ToolTipService.ToolTip="フルスクリーン (F11)">
                 <FontIcon x:Name="FullScreenIcon" Glyph="&#xE740;" FontSize="16" />
             </Button>
         </Grid>

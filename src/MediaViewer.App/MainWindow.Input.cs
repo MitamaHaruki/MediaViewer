@@ -211,6 +211,9 @@ public sealed partial class MainWindow
             case VirtualKey.M:
                 SetMuted(!_isMuted);
                 break;
+            case VirtualKey.R when IsPlayable && !ctrl:
+                SetRepeat(!_isRepeat);
+                break;
             case VirtualKey.PageUp:
                 Navigate(forward: false);
                 break;
