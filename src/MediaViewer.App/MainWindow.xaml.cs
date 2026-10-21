@@ -113,6 +113,11 @@ public sealed partial class MainWindow : Window
     /// <summary>起動引数や関連付けから渡されたファイルを開く。</summary>
     public void OpenFromStartup(string path) => _ = OpenAsync(path);
 
+#if DEBUG
+    /// <summary>開発用の調査（LeakProbe）から、通常と同じ手順でファイルを開く。</summary>
+    internal Task OpenForProbeAsync(string path) => OpenAsync(path);
+#endif
+
     // ---- 描画の初期化 ----
 
     private ContentRenderer EnsureGraphics()
@@ -319,6 +324,7 @@ public sealed partial class MainWindow : Window
             {
                 PerfTrace.FlushRenders();
                 PerfTrace.Log($"ファイルを開く {_currentKind} {Stopwatch.GetElapsedTime(openStart).TotalMilliseconds:F0} ms");
+                PerfTrace.RecordOpen();
                 LoadingRing.IsActive = false;
                 UpdateUi();
                 FocusViewer();
@@ -572,6 +578,7 @@ public sealed partial class MainWindow : Window
 
     private void OnClosed(object sender, WindowEventArgs args)
     {
+        PerfTrace.Log("ウィンドウを閉じました");
         _volumeSaveTimer?.Stop();
         SaveWindowPlacementOnClose();
         _positionTimer.Stop();

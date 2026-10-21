@@ -248,6 +248,8 @@ public sealed partial class MainWindow
 
     private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
+        // 閉じるボタン・Alt+F4・タスクバーなど、ウィンドウの外からの終了要求（測定時の調査用の記録）
+        PerfTrace.Log($"終了の要求を受けました（確認済み {_closeConfirmed}）");
         if (_closeConfirmed) return;
         if (_askingUpdateOnClose || !HandleUpdateOnClose())
         {

@@ -39,6 +39,22 @@ internal static class PerfTrace
         if (s_renders >= RenderBatch) FlushRenders();
     }
 
+    private static int s_opens;
+
+    /// <summary>
+    /// ファイルを開いた回数を数え、30回ごとにガベージコレクションを強制してからハンドル数とメモリを記録する。
+    /// 増え続けるハンドルが「本当の漏れ」か「GC で回収される一時的なもの」かを見分けるため。
+    /// </summary>
+    public static void RecordOpen()
+    {
+        if (!Enabled || ++s_opens % 30 != 0) return;
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        using var process = Process.GetCurrentProcess();
+        Log($"{s_opens}回開いた後（GC後）：ハンドル {process.HandleCount}、Private {process.PrivateMemorySize64 / (1024 * 1024)} MB、マネージド {GC.GetTotalMemory(false) / (1024 * 1024)} MB");
+    }
+
     public static void FlushRenders()
     {
         if (!Enabled || s_renders == 0) return;

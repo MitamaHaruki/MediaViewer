@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices.WindowsRuntime;
 using FFmpegInteropX;
+using MediaViewer.Core.Media;
 using MediaViewer.Imaging.Graphics;
 using MediaViewer.Imaging.Rendering;
 using Microsoft.UI.Dispatching;
@@ -201,22 +202,15 @@ internal sealed class PlaybackController : IDisposable
 
     /// <summary>
     /// 動画の表示回転（時計回りの角度）。FFmpegInteropX は回転情報を公開しないため、
-    /// Windows のプロパティシステム（MP4/MOV 等の表示行列）から取得し、なければ Media Foundation の属性を見る。
+    /// MP4・MOV の表示行列をファイルから直接読み（Windows のプロパティシステムと同じ値。プロパティシステムは
+    /// 読むたびにハンドルが残るため使わない）、なければ Media Foundation の属性を見る。
     /// フレームサーバーの出力は回転前のフレームなので、描画側で回転を適用する。
     /// </summary>
     private static async Task<int> ReadRotationAsync(string path, MediaPlaybackItem item)
     {
-        try
-        {
-            var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
-            var props = await file.Properties.GetVideoPropertiesAsync();
-            var degrees = (int)props.Orientation;
-            if (degrees is 90 or 180 or 270) return degrees;
-        }
-        catch (Exception)
-        {
-            // プロパティハンドラーがない形式（MKV等）は次の方法へ
-        }
+        // MP4・MOV 以外（MKV 等）は 0 が返るので、次の方法へ
+        var degrees = await Task.Run(() => Mp4Orientation.Read(path));
+        if (degrees != 0) return degrees;
         try
         {
             if (item.VideoTracks.Count > 0

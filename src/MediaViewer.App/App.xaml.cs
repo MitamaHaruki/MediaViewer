@@ -33,6 +33,14 @@ public partial class App : Application
             return;
         }
 
+#if DEBUG
+        if (LeakProbe.Mode is { Length: > 0 } probe)
+        {
+            _ = RunLeakProbeAsync(probe);
+            return;
+        }
+#endif
+
         var store = SettingsStore.CreateDefault();
         _window = new MainWindow(store, store.Load());
         _window.Activate();
@@ -45,4 +53,18 @@ public partial class App : Application
             _window.OpenFromStartup(Path.GetFullPath(path));
         }
     }
+#if DEBUG
+    private static async Task RunLeakProbeAsync(string mode)
+    {
+        try
+        {
+            Environment.Exit(await LeakProbe.RunAsync(mode));
+        }
+        catch (Exception e)
+        {
+            AppLog.Error("[leak] 失敗", e);
+            Environment.Exit(1);
+        }
+    }
+#endif
 }
