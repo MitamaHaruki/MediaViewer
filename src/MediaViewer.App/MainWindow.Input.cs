@@ -168,6 +168,13 @@ public sealed partial class MainWindow
         var focused = FocusManager.GetFocusedElement(Content.XamlRoot);
         if (focused is TextBox or PasswordBox or AutoSuggestBox or RichEditBox) return;
         var inMenu = focused is MenuBarItem or MenuFlyoutItemBase;
+        // サイドバーの一覧を操作中は、矢印キー等は一覧の移動に使う（選んだファイルが開く）
+        if (focused is ListViewItem or ListView
+            && e.Key is VirtualKey.Up or VirtualKey.Down or VirtualKey.Left or VirtualKey.Right
+                or VirtualKey.PageUp or VirtualKey.PageDown or VirtualKey.Home or VirtualKey.End)
+        {
+            return;
+        }
         var ctrl = InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control).HasFlag(CoreVirtualKeyStates.Down);
 
 #if DEBUG
@@ -196,6 +203,18 @@ public sealed partial class MainWindow
             case VirtualKey.Escape when _isFullScreen:
                 SetFullScreen(false);
                 break;
+            case VirtualKey.Escape when _autoPlay:
+                SetAutoPlay(false);
+                break;
+            case VirtualKey.F5:
+                ToggleAutoPlay();
+                break;
+            case VirtualKey.P when ctrl:
+                OnPrintClick(this, new RoutedEventArgs());
+                break;
+            case VirtualKey.B when ctrl:
+                SetSidebarOpen(!_sidebarOpen, save: true);
+                break;
             case VirtualKey.Space when IsPlayable:
                 _playback!.TogglePlayPause();
                 break;
@@ -211,7 +230,7 @@ public sealed partial class MainWindow
             case VirtualKey.M:
                 SetMuted(!_isMuted);
                 break;
-            case VirtualKey.R when IsPlayable && !ctrl:
+            case VirtualKey.R when (IsPlayable || AvailableAutoPlay != AutoPlayMode.None) && !ctrl:
                 SetRepeat(!_isRepeat);
                 break;
             case VirtualKey.PageUp:

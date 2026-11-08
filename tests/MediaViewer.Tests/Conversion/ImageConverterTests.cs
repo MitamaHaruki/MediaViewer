@@ -319,4 +319,59 @@ public sealed class ImageConverterTests
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             ImageConverter.ExecuteAsync(prep, input, overwrite: true, null, null, CancellationToken.None));
     }
+
+    // ---- 印刷・サムネイル用の sRGB 画素 ----
+
+    [TestMethod]
+    public void 印刷用の画素はICCからsRGBへ色変換する()
+    {
+        var p3 = IccProfileBuilder.BuildMatrixTrc(ColorMath.DisplayP3, 2.2, "P3 test");
+        var input = Save(TestImageFiles.Encode(Wic, ContainerFormat.Png, PixelFormat.Format32bppBGRA, 1, 1, Bgra((128, 128, 64, 255)), p3), ".png");
+
+        var bitmap = ImageConverter.RenderSrgb(input, 4096, CancellationToken.None);
+
+        double[] linear = [Math.Pow(128 / 255.0, 563 / 256.0), Math.Pow(128 / 255.0, 563 / 256.0), Math.Pow(64 / 255.0, 563 / 256.0)];
+        var srgb = ColorMath.Convert(ColorMath.DisplayP3, ColorMath.Srgb, linear)
+            .Select(v => v <= 0.0031308 ? v * 12.92 : 1.055 * Math.Pow(v, 1 / 2.4) - 0.055).Select(v => Math.Clamp(v, 0, 1) * 255).ToArray();
+        Assert.AreEqual((1, 1), (bitmap.Width, bitmap.Height));
+        Assert.AreEqual(srgb[0], bitmap.Pixels[2], 3, "R");
+        Assert.AreEqual(srgb[1], bitmap.Pixels[1], 3, "G");
+        Assert.AreEqual(srgb[2], bitmap.Pixels[0], 3, "B");
+        Assert.AreEqual(255, bitmap.Pixels[3], "不透明");
+    }
+
+    [TestMethod]
+    public void 印刷用の画素は長辺を指定の大きさまで縮小しEXIFの向きを反映する()
+    {
+        // 横 64 × 縦 32 の JPEG を「右へ90度回転」で表示する（表示上は縦長）
+        var bgr = new byte[64 * 32 * 3];
+        var jpeg = TestImageFiles.Encode(Wic, ContainerFormat.Jpeg, PixelFormat.Format24bppBGR, 64, 32, bgr);
+        var input = Save(TestImageFiles.InsertJpegExif(jpeg, (ushort)ExifOrientation.Rotate90, 1, null), ".jpg");
+
+        var bitmap = ImageConverter.RenderSrgb(input, 16, CancellationToken.None);
+
+        Assert.AreEqual((8, 16), (bitmap.Width, bitmap.Height), "長辺 16 に縮小し、縦長に回転");
+        Assert.AreEqual(8 * 16 * 4, bitmap.Pixels.Length);
+    }
+
+    [TestMethod]
+    public void 透過はアルファ乗算済みの画素になる()
+    {
+        var bitmap = ImageConverter.RenderSrgb(AlphaPng(), 4096, CancellationToken.None);
+        Assert.AreEqual(3, bitmap.Width);
+        Assert.AreEqual(255, bitmap.Pixels[2], "不透明な赤");
+        Assert.AreEqual(0, bitmap.Pixels[4 + 0], "透明は乗算済みで 0");
+        Assert.AreEqual(0, bitmap.Pixels[4 + 3]);
+        Assert.AreEqual(128, bitmap.Pixels[8 + 3], 1, "半透明");
+    }
+
+    [TestMethod]
+    public void HDR画像は印刷用の画素に変換しない()
+    {
+        var pixels = new byte[6];
+        var png = TestImageFiles.Encode(Wic, ContainerFormat.Png, PixelFormat.Format48bppRGB, 1, 1, pixels);
+        png = TestImageFiles.InsertPngChunks(png, ("cICP", [9, 16, 0, 1]));
+        var input = Save(png, ".png");
+        Assert.ThrowsExactly<NotSupportedException>(() => ImageConverter.RenderSrgb(input, 256, CancellationToken.None));
+    }
 }

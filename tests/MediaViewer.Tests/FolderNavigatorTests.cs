@@ -83,6 +83,32 @@ public sealed class FolderNavigatorTests
     }
 
     [TestMethod]
+    public void 一覧はフィルターに合うものを自然順で返す()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "MediaViewerTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            foreach (var f in new[] { "b10.png", "b2.png", "a.mp4", "c.mp3", "skip.txt", "B1.jpg" })
+            {
+                File.WriteAllBytes(Path.Combine(dir, f), []);
+            }
+            CollectionAssert.AreEqual(
+                new[] { "a.mp4", "B1.jpg", "b2.png", "b10.png", "c.mp3" }.Select(f => Path.Combine(dir, f)).ToList(),
+                FolderNavigator.List(dir, NavigationFilter.All).ToList());
+            CollectionAssert.AreEqual(
+                new[] { "B1.jpg", "b2.png", "b10.png" }.Select(f => Path.Combine(dir, f)).ToList(),
+                FolderNavigator.List(dir, NavigationFilter.Images).ToList());
+            CollectionAssert.AreEqual(new[] { Path.Combine(dir, "c.mp3") }, FolderNavigator.List(dir, NavigationFilter.Audio).ToList());
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+        Assert.AreEqual(0, FolderNavigator.List(@"Z:\存在しない\フォルダ", NavigationFilter.All).Count);
+    }
+
+    [TestMethod]
     public void 存在しないフォルダでは前後なしを返す()
     {
         var n = FolderNavigator.FindNeighbors(@"Z:\存在しない\フォルダ\x.png", NavigationFilter.All);

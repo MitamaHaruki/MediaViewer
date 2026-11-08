@@ -48,6 +48,8 @@ public sealed class AppSettings
     public const int CurrentSchemaVersion = 1;
     public const double DefaultVolume = 0.8;
     public static readonly int[] SeekStepChoices = [5, 10, 30];
+    public static readonly int[] SlideshowIntervalChoices = [2, 3, 5, 10, 30];
+    public const int DefaultSlideshowInterval = 5;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
 
@@ -59,6 +61,12 @@ public sealed class AppSettings
     /// <summary>動画・音声を終端で先頭に戻して繰り返す（初期値 OFF。OFF なら終端で停止、仕様 §7.2）。</summary>
     public bool RepeatEnabled { get; set; }
     public int SeekStepSeconds { get; set; } = 5;
+
+    /// <summary>スライドショーで次の画像へ進むまでの秒数（仕様決定事項 D14）。</summary>
+    public int SlideshowIntervalSeconds { get; set; } = DefaultSlideshowInterval;
+
+    /// <summary>左のサイドバー（フォルダ内の一覧）を開いているか。初回は閉じた状態で、以後は前回の状態（D17）。</summary>
+    public bool SidebarOpen { get; set; }
     public WindowPlacement? Window { get; set; }
     public UpdateSettings Update { get; set; } = new();
 
@@ -72,6 +80,7 @@ public sealed class AppSettings
         if (!Enum.IsDefined(NavigationFilter)) NavigationFilter = NavigationFilter.All;
         Volume = double.IsFinite(Volume) ? Math.Clamp(Volume, 0, 1) : DefaultVolume;
         if (!SeekStepChoices.Contains(SeekStepSeconds)) SeekStepSeconds = 5;
+        if (!SlideshowIntervalChoices.Contains(SlideshowIntervalSeconds)) SlideshowIntervalSeconds = DefaultSlideshowInterval;
         Update ??= new UpdateSettings();
         if (!Enum.IsDefined(Update.ApplyMode)) Update.ApplyMode = UpdateApplyMode.OnExit;
         if (Window is { Width: < 200 } or { Height: < 150 }) Window = null;

@@ -145,7 +145,7 @@ public sealed partial class MainWindow
     {
         var changed = _isRepeat != repeat;
         _isRepeat = repeat;
-        if (_playback is not null) _playback.IsRepeatEnabled = repeat;
+        ApplyRepeatToPlayback();
         RepeatButton.IsChecked = repeat;
         MenuRepeat.IsChecked = repeat;
         if (changed) SaveSettings(s => s.RepeatEnabled = repeat);
@@ -219,6 +219,8 @@ public sealed partial class MainWindow
             AppTitleBar.Visibility = Visibility.Collapsed;
             Grid.SetRow(ViewerHost, 0);
             Grid.SetRowSpan(ViewerHost, 3);
+            Grid.SetColumn(ViewerHost, 0);
+            Grid.SetColumnSpan(ViewerHost, 2);
             ControlBar.Background = BarBrushOverlay;
             ControlBar.MaxWidth = 1100;
             ControlBar.Margin = new Thickness(24, 0, 24, 24);
@@ -226,17 +228,21 @@ public sealed partial class MainWindow
             ControlBar.VerticalAlignment = VerticalAlignment.Bottom;
             FullScreenIcon.Glyph = "";
             _isFullScreen = true;
+            UpdateSidebarVisibility();
             ShowControlsTemporarily();
         }
         else
         {
             _isFullScreen = false;
+            UpdateSidebarVisibility();
             _hideTimer.Stop();
             AppWindow.SetPresenter(AppWindowPresenterKind.Overlapped);
             RestoreWindowPlacement();
             AppTitleBar.Visibility = Visibility.Visible;
             Grid.SetRow(ViewerHost, 1);
             Grid.SetRowSpan(ViewerHost, 1);
+            Grid.SetColumn(ViewerHost, 1);
+            Grid.SetColumnSpan(ViewerHost, 1);
             ControlBar.Background = BarBrushNormal;
             ControlBar.MaxWidth = double.PositiveInfinity;
             ControlBar.Margin = new Thickness(0);
@@ -309,6 +315,7 @@ public sealed partial class MainWindow
         FilterButton.Visibility = width < 620 ? Visibility.Collapsed : Visibility.Visible;
         StopButton.Visibility = width < 480 ? Visibility.Collapsed : Visibility.Visible;
         RepeatButton.Visibility = width < 480 ? Visibility.Collapsed : Visibility.Visible;
+        AutoPlayButton.Visibility = width < 540 ? Visibility.Collapsed : Visibility.Visible;
     }
 
     // ---- ダイアログ ----
@@ -406,8 +413,12 @@ public sealed partial class MainWindow
             ("再生／一時停止", "Space", "再生ボタン"),
             ("停止（先頭へ戻る）", "停止ボタン", "停止ボタン"),
             ("リピートの ON／OFF", "R", "リピートボタン"),
+            ("スライドショー／連続再生", "F5（Esc で終了）", "スライドショー（連続再生）ボタン"),
             ($"早送り・巻き戻し（{seek}秒）", "→／←（動画・音声）", "シークバー"),
             ("音量／ミュート", "↑／↓、M", "音量スライダー、スピーカーボタン"),
+            ("サイドバー（フォルダ内の一覧）", "Ctrl+B", "サイドバーボタン"),
+            ("印刷（画像）", "Ctrl+P", "メニュー「ファイル → 印刷」"),
+            ("メニューを出す", "右クリック", "長押し"),
             ("フルスクリーン", "F11（Esc で戻る）", "フルスクリーンボタン"),
         ];
 
@@ -441,7 +452,10 @@ public sealed partial class MainWindow
         panel.Children.Add(grid);
         panel.Children.Add(new TextBlock
         {
-            Text = "早送り・巻き戻しの秒数は「設定 → 一般設定」で変更できます。フルスクリーンでは、操作しないと約5秒で操作バーが隠れます。",
+            Text = "スライドショーは「表示 → 移動フィルター」が「画像のみ」のとき、連続再生は「動画のみ」「音声のみ」のときに使えます。"
+                + "リピートが ON なら最後のファイルの次は最初に戻り、OFF なら最後で止まります。"
+                + "早送り・巻き戻しの秒数とスライドショーの切り替え間隔は「設定 → 一般設定」で変更できます。"
+                + "フルスクリーンでは、操作しないと約5秒で操作バーが隠れます。",
             TextWrapping = TextWrapping.Wrap,
             Opacity = 0.75,
         });

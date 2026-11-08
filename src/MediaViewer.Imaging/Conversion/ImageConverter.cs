@@ -27,7 +27,7 @@ public sealed record ImageConversionPreparation(
 /// </list>
 /// WebP の書き出しは FFmpeg（libwebp）を使う（WIC には WebP のエンコーダーがないため）。
 /// </summary>
-public static class ImageConverter
+public static partial class ImageConverter
 {
     private const float JpegQuality = 0.92f;
     private const int WebPLossyQuality = 90;
@@ -135,12 +135,15 @@ public static class ImageConverter
     private sealed record SourceInfo(int Width, int Height, Guid PixelFormat, bool IsCmyk, bool IsHighBitDepth, bool HasAlphaChannel,
         SourceColor Color, byte[]? CmykProfile, ExifOrientation Orientation, bool HasMetadata);
 
-    private static SourceInfo Inspect(IWICImagingFactory wic, IWICBitmapDecoder decoder, IWICBitmapFrameDecode frame, string path)
+    private static SourceInfo Inspect(IWICImagingFactory wic, IWICBitmapDecoder decoder, IWICBitmapFrameDecode frame, string path) =>
+        Inspect(wic, decoder, frame, () => new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete));
+
+    /// <summary>画像の大きさ・画素形式・色の指定・向きを調べる。open は元のデータを読み直すため（PNG の色情報など）に使う。</summary>
+    private static SourceInfo Inspect(IWICImagingFactory wic, IWICBitmapDecoder decoder, IWICBitmapFrameDecode frame, Func<Stream> open)
     {
         var format = frame.PixelFormat;
         var isCmyk = WicImageLoader.CmykFormats.Contains(format);
-        var (color, cmyk) = WicImageLoader.ReadSourceColor(wic, frame, decoder.ContainerFormat,
-            () => new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete), isCmyk);
+        var (color, cmyk) = WicImageLoader.ReadSourceColor(wic, frame, decoder.ContainerFormat, open, isCmyk);
         return new SourceInfo(frame.Size.Width, frame.Size.Height, format, isCmyk, WicImageLoader.IsHighBitDepth(wic, format),
             HasAlphaChannel(wic, format), color, cmyk, WicImageLoader.ReadOrientation(frame), HasMetadata(frame));
     }

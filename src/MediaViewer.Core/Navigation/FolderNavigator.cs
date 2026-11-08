@@ -45,23 +45,41 @@ public static class FolderNavigator
         var directory = Path.GetDirectoryName(currentPath);
         if (string.IsNullOrEmpty(directory)) return NavigationNeighbors.None;
 
-        List<string> names;
+        var names = EnumerateSupportedNames(directory);
+        if (names is null) return NavigationNeighbors.None;
+
+        var (prev, next) = FindNeighbors(names, Path.GetFileName(currentPath), filter, NaturalStringComparer.Instance);
+        return new NavigationNeighbors(
+            prev is null ? null : Path.Combine(directory, prev),
+            next is null ? null : Path.Combine(directory, next));
+    }
+
+    /// <summary>
+    /// フォルダ直下の対応メディアのうち、フィルターに合うものを名前順（自然順）のフルパスで返す。
+    /// サイドバーの一覧と、繰り返し時に先頭へ戻る処理で使う。フォルダにアクセスできなければ空。
+    /// </summary>
+    public static IReadOnlyList<string> List(string directory, NavigationFilter filter)
+    {
+        var names = EnumerateSupportedNames(directory);
+        if (names is null) return [];
+        var matched = names.Where(n => Matches(filter, MediaKinds.FromPath(n))).ToList();
+        matched.Sort(NaturalStringComparer.Instance);
+        return matched.Select(n => Path.Combine(directory, n)).ToList();
+    }
+
+    private static List<string>? EnumerateSupportedNames(string directory)
+    {
         try
         {
-            names = Directory.EnumerateFiles(directory, "*", Enumeration)
+            return Directory.EnumerateFiles(directory, "*", Enumeration)
                 .Select(Path.GetFileName)
                 .Where(n => n is not null && MediaKinds.IsSupported(n))
                 .ToList()!;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
-            return NavigationNeighbors.None;
+            return null;
         }
-
-        var (prev, next) = FindNeighbors(names, Path.GetFileName(currentPath), filter, NaturalStringComparer.Instance);
-        return new NavigationNeighbors(
-            prev is null ? null : Path.Combine(directory, prev),
-            next is null ? null : Path.Combine(directory, next));
     }
 
     /// <summary>

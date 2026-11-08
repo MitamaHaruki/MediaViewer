@@ -88,6 +88,8 @@ public sealed partial class MainWindow : Window
         ControlBar.SizeChanged += (_, _) => UpdateCompactLayout();
         ApplySettings(settings);
         InitializeUpdates();
+        InitializeAutoPlay();
+        InitializeSidebar(settings.SidebarOpen);
         TraceRootInput();
         UpdateUi();
     }
@@ -139,9 +141,13 @@ public sealed partial class MainWindow : Window
         {
             Volume = VolumeSlider.Value / 100.0,
             IsMuted = _isMuted,
-            IsRepeatEnabled = _isRepeat,
+            IsRepeatEnabled = _isRepeat && !IsContinuousPlaying,
         };
-        _playback.StateChanged += (_, _) => UpdateUi();
+        _playback.StateChanged += (_, _) =>
+        {
+            UpdateUi();
+            OnPlaybackStateForAutoPlay();
+        };
         _playback.PlaybackFailed += (_, message) => ShowMessage(message, InfoBarSeverity.Error);
         _renderer.DeviceLost += (_, _) => DispatcherQueue.TryEnqueue(RecoverFromDeviceLost);
         return _renderer;
@@ -270,6 +276,7 @@ public sealed partial class MainWindow : Window
         var kind = MediaKinds.FromPath(path);
         UpdateTitle();
         RefreshNeighbors();
+        RefreshSidebar();
         LoadingRing.IsActive = true;
         Placeholder.Visibility = Visibility.Collapsed;
 
@@ -325,6 +332,7 @@ public sealed partial class MainWindow : Window
                 PerfTrace.FlushRenders();
                 PerfTrace.Log($"ファイルを開く {_currentKind} {Stopwatch.GetElapsedTime(openStart).TotalMilliseconds:F0} ms");
                 PerfTrace.RecordOpen();
+                OnOpenedForAutoPlay();
                 LoadingRing.IsActive = false;
                 UpdateUi();
                 FocusViewer();
@@ -508,6 +516,9 @@ public sealed partial class MainWindow : Window
         };
         // フィルター変更の瞬間にフォルダを再走査する（仕様 §4.2）。表示中のファイルはそのまま
         RefreshNeighbors();
+        OnFilterChangedForAutoPlay();
+        RefreshSidebar(force: true);
+        UpdateUi();
         SaveSettings(s => s.NavigationFilter = filter);
     }
 
@@ -531,7 +542,8 @@ public sealed partial class MainWindow : Window
         var state = _playback?.State ?? PlaybackState.Closed;
         PlayPauseButton.IsEnabled = StopButton.IsEnabled = SeekSlider.IsEnabled = playable;
         MenuPlayPause.IsEnabled = MenuStop.IsEnabled = playable;
-        RepeatButton.IsEnabled = MenuRepeat.IsEnabled = playable;
+        // リピート：動画・音声では1つのファイルの繰り返し、スライドショー・連続再生では一覧の繰り返し（D14）
+        RepeatButton.IsEnabled = MenuRepeat.IsEnabled = playable || AvailableAutoPlay != AutoPlayMode.None;
         PlayPauseIcon.Glyph = state == PlaybackState.Playing ? "" : "";
         FitButton.IsEnabled = IsZoomable && !_viewport.IsAtFit;
 
@@ -583,6 +595,8 @@ public sealed partial class MainWindow : Window
         SaveWindowPlacementOnClose();
         _positionTimer.Stop();
         _hideTimer.Stop();
+        _slideTimer?.Stop();
+        UnregisterForPrinting();
         ReleaseGraphics();
     }
 }

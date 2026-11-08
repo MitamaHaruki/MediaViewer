@@ -38,6 +38,7 @@ public sealed partial class MainWindow
             SetMuted(settings.IsMuted);
             SetRepeat(settings.RepeatEnabled);
             _seekStep = TimeSpan.FromSeconds(settings.SeekStepSeconds);
+            _slideInterval = TimeSpan.FromSeconds(settings.SlideshowIntervalSeconds);
         }
         finally
         {
@@ -208,11 +209,19 @@ public sealed partial class MainWindow
             ItemsSource = AppSettings.SeekStepChoices.Select(v => $"{v} 秒").ToList(),
             SelectedIndex = Math.Max(0, Array.IndexOf(AppSettings.SeekStepChoices, current.SeekStepSeconds)),
         };
+        var interval = new ComboBox
+        {
+            Header = "スライドショーの切り替え間隔",
+            MinWidth = 200,
+            ItemsSource = AppSettings.SlideshowIntervalChoices.Select(v => $"{v} 秒").ToList(),
+            SelectedIndex = Math.Max(0, Array.IndexOf(AppSettings.SlideshowIntervalChoices, current.SlideshowIntervalSeconds)),
+        };
         var openFolder = new HyperlinkButton { Content = "設定ファイルの場所を開く", Padding = new Thickness(0) };
         openFolder.Click += (_, _) => OpenSettingsFolder();
 
         var panel = new StackPanel { Spacing = 16, MinWidth = 360 };
         panel.Children.Add(seek);
+        panel.Children.Add(interval);
         panel.Children.Add(new TextBlock
         {
             Text = "音量・ミュート・前後移動の対象・ウィンドウの位置は自動で保存されます。",
@@ -234,8 +243,14 @@ public sealed partial class MainWindow
         if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
 
         var seconds = AppSettings.SeekStepChoices[Math.Max(0, seek.SelectedIndex)];
+        var slideSeconds = AppSettings.SlideshowIntervalChoices[Math.Max(0, interval.SelectedIndex)];
         _seekStep = TimeSpan.FromSeconds(seconds);
-        SaveSettings(s => s.SeekStepSeconds = seconds);
+        _slideInterval = TimeSpan.FromSeconds(slideSeconds);
+        SaveSettings(s =>
+        {
+            s.SeekStepSeconds = seconds;
+            s.SlideshowIntervalSeconds = slideSeconds;
+        });
     }
 
     private void OpenSettingsFolder()

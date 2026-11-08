@@ -31,6 +31,8 @@ public sealed class SettingsStoreTests
         Assert.AreEqual(AppSettings.DefaultVolume, s.Volume);
         Assert.IsFalse(s.IsMuted);
         Assert.IsFalse(s.RepeatEnabled, "リピートは初期値 OFF（終端で停止）");
+        Assert.AreEqual(5, s.SlideshowIntervalSeconds);
+        Assert.IsFalse(s.SidebarOpen, "サイドバーは初回は閉じた状態");
         Assert.AreEqual(5, s.SeekStepSeconds);
         Assert.IsNull(s.Window);
         Assert.IsTrue(s.Update.AutoCheck);
@@ -50,6 +52,8 @@ public sealed class SettingsStoreTests
             s.Volume = 0.35;
             s.IsMuted = true;
             s.RepeatEnabled = true;
+            s.SlideshowIntervalSeconds = 10;
+            s.SidebarOpen = true;
             s.SeekStepSeconds = 10;
             s.Window = new WindowPlacement { X = 100, Y = -50, Width = 1200, Height = 800, IsMaximized = true };
             s.Update.LastCheckedUtc = checkedAt;
@@ -60,6 +64,8 @@ public sealed class SettingsStoreTests
         Assert.AreEqual(0.35, r.Volume, 1e-9);
         Assert.IsTrue(r.IsMuted);
         Assert.IsTrue(r.RepeatEnabled);
+        Assert.AreEqual(10, r.SlideshowIntervalSeconds);
+        Assert.IsTrue(r.SidebarOpen);
         Assert.AreEqual(10, r.SeekStepSeconds);
         Assert.AreEqual(-50, r.Window!.Y);
         Assert.IsTrue(r.Window.IsMaximized);
@@ -82,12 +88,13 @@ public sealed class SettingsStoreTests
     public void 範囲外の値は安全な値に直す()
     {
         File.WriteAllText(_path, """
-            { "volume": 7, "seekStepSeconds": 3, "navigationFilter": "Unknown", "window": { "x": 0, "y": 0, "width": 10, "height": 10 } }
+            { "volume": 7, "seekStepSeconds": 3, "slideshowIntervalSeconds": 7, "navigationFilter": "Unknown", "window": { "x": 0, "y": 0, "width": 10, "height": 10 } }
             """);
         var s = new SettingsStore(_path).Load();
 
         Assert.AreEqual(1.0, s.Volume);
         Assert.AreEqual(5, s.SeekStepSeconds);
+        Assert.AreEqual(5, s.SlideshowIntervalSeconds);
         Assert.IsNull(s.Window);
     }
 
