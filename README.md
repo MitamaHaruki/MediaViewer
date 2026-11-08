@@ -118,7 +118,7 @@ dotnet build installer/MediaViewer.Installer.wixproj --no-incremental -c Release
 ### リリースの手順（開発者向け）
 
 1. `Directory.Build.props` の `Version` を更新してコミットし、`main` へ push します。
-2. 変更内容を書いた注釈付きタグを作って push します（例：`git tag -a v1.2.3 -m "変更内容..."`、`git push origin v1.2.3`）。
+2. 変更内容を書いた注釈付きタグを作って push します（例：`git tag -a v1.2.3 --cleanup=verbatim -F 変更内容.txt`、`git push origin v1.2.3`）。`--cleanup=verbatim` を付けないと、`## 新機能` のような `#` で始まる行（見出し）が消えます。
 3. GitHub Actions の「リリース」が、テスト・発行・起動確認・MSI の作成・署名を行い、安定版として公開します。タグの説明文がリリースノートになります。
 
 更新ファイルの署名に使う秘密鍵は、リポジトリの Secrets（`UPDATE_SIGNING_KEY`）に登録しています。対になる公開鍵は `src/MediaViewer.Core/Updates/UpdateConfiguration.cs` にあります（古い版のアプリは別の鍵で署名した更新を受け付けないため、鍵は作り直さない前提です）。
