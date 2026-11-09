@@ -169,7 +169,7 @@ public sealed partial class MainWindow
         if (focused is TextBox or PasswordBox or AutoSuggestBox or RichEditBox) return;
         var inMenu = focused is MenuBarItem or MenuFlyoutItemBase;
         // サイドバーの一覧を操作中は、矢印キー等は一覧の移動に使う（選んだファイルが開く）
-        if (focused is ListViewItem or ListView
+        if (focused is ListViewItem or ListView or GridViewItem or GridView
             && e.Key is VirtualKey.Up or VirtualKey.Down or VirtualKey.Left or VirtualKey.Right
                 or VirtualKey.PageUp or VirtualKey.PageDown or VirtualKey.Home or VirtualKey.End)
         {

@@ -14,6 +14,16 @@ public enum UpdateApplyMode
     AskEachTime,
 }
 
+/// <summary>サイドバーの表示形式。</summary>
+public enum SidebarLayout
+{
+    /// <summary>サムネイルとファイル名の一覧（既定）。</summary>
+    List,
+
+    /// <summary>サムネイルだけを横2列に並べる。</summary>
+    Grid,
+}
+
 /// <summary>ウィンドウの通常時（最大化していないとき）の位置・大きさと、最大化していたか。</summary>
 public sealed class WindowPlacement
 {
@@ -67,6 +77,10 @@ public sealed class AppSettings
 
     /// <summary>左のサイドバー（フォルダ内の一覧）を開いているか。初回は閉じた状態で、以後は前回の状態（D17）。</summary>
     public bool SidebarOpen { get; set; }
+
+    /// <summary>サイドバーの表示形式（一覧／サムネイルのみ2列）。初期値は一覧。</summary>
+    [JsonConverter(typeof(LenientEnumConverter<SidebarLayout>))]
+    public SidebarLayout SidebarLayout { get; set; } = SidebarLayout.List;
     public WindowPlacement? Window { get; set; }
     public UpdateSettings Update { get; set; } = new();
 
@@ -78,6 +92,7 @@ public sealed class AppSettings
     public void Normalize()
     {
         if (!Enum.IsDefined(NavigationFilter)) NavigationFilter = NavigationFilter.All;
+        if (!Enum.IsDefined(SidebarLayout)) SidebarLayout = SidebarLayout.List;
         Volume = double.IsFinite(Volume) ? Math.Clamp(Volume, 0, 1) : DefaultVolume;
         if (!SeekStepChoices.Contains(SeekStepSeconds)) SeekStepSeconds = 5;
         if (!SlideshowIntervalChoices.Contains(SlideshowIntervalSeconds)) SlideshowIntervalSeconds = DefaultSlideshowInterval;

@@ -100,12 +100,42 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <TextBlock x:Name="SidebarHeader" Margin="12,8,12,6" FontSize="12" Opacity="0.75" TextTrimming="CharacterEllipsis" />
+                <Grid Margin="12,4,4,2" ColumnSpacing="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="SidebarHeader" FontSize="12" Opacity="0.75" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                    <ToggleButton x:Name="SidebarListModeButton"
+                                  Grid.Column="1"
+                                  Padding="7,5"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  AutomationProperties.Name="一覧で表示"
+                                  ToolTipService.ToolTip="一覧で表示（サムネイルとファイル名）"
+                                  Click="OnSidebarListModeClick">
+                        <FontIcon Glyph="&#xE8FD;" FontSize="14" />
+                    </ToggleButton>
+                    <ToggleButton x:Name="SidebarGridModeButton"
+                                  Grid.Column="2"
+                                  Padding="7,5"
+                                  Background="Transparent"
+                                  BorderThickness="0"
+                                  AutomationProperties.Name="サムネイルで表示"
+                                  ToolTipService.ToolTip="サムネイルだけを2列で表示"
+                                  Click="OnSidebarGridModeClick">
+                        <FontIcon Glyph="&#xE80A;" FontSize="14" />
+                    </ToggleButton>
+                </Grid>
                 <ListView x:Name="SidebarList"
                           Grid.Row="1"
                           SelectionMode="Single"
+                          CanDragItems="True"
                           AutomationProperties.Name="フォルダ内のファイル"
                           SelectionChanged="OnSidebarSelectionChanged"
+                          DragItemsStarting="OnSidebarDragItemsStarting"
+                          DragItemsCompleted="OnSidebarDragItemsCompleted"
                           ContainerContentChanging="OnSidebarContainerContentChanging">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="sidebar:SidebarItem">
@@ -131,6 +161,44 @@
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
+                <GridView x:Name="SidebarGrid"
+                          Grid.Row="1"
+                          Visibility="Collapsed"
+                          Padding="8,0,6,8"
+                          SelectionMode="Single"
+                          CanDragItems="True"
+                          AutomationProperties.Name="フォルダ内のファイル（サムネイル）"
+                          SelectionChanged="OnSidebarSelectionChanged"
+                          DragItemsStarting="OnSidebarDragItemsStarting"
+                          DragItemsCompleted="OnSidebarDragItemsCompleted"
+                          ContainerContentChanging="OnSidebarContainerContentChanging">
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="2" ItemWidth="120" ItemHeight="120" />
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                    <GridView.ItemContainerStyle>
+                        <Style TargetType="GridViewItem" BasedOn="{StaticResource DefaultGridViewItemStyle}">
+                            <Setter Property="Margin" Value="2" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </GridView.ItemContainerStyle>
+                    <GridView.ItemTemplate>
+                        <DataTemplate x:DataType="sidebar:SidebarItem">
+                            <Border Background="#FF222222"
+                                    CornerRadius="4"
+                                    AutomationProperties.Name="{x:Bind Name}"
+                                    ToolTipService.ToolTip="{x:Bind Name}">
+                                <Grid>
+                                    <FontIcon Glyph="{x:Bind KindGlyph}" FontSize="28" Opacity="0.45" Visibility="{x:Bind PlaceholderVisibility, Mode=OneWay}" />
+                                    <Image Source="{x:Bind Thumbnail, Mode=OneWay}" Stretch="Uniform" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
             </Grid>
         </Border>
 

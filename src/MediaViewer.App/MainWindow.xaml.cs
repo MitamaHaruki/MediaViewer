@@ -89,7 +89,7 @@ public sealed partial class MainWindow : Window
         ApplySettings(settings);
         InitializeUpdates();
         InitializeAutoPlay();
-        InitializeSidebar(settings.SidebarOpen);
+        InitializeSidebar(settings.SidebarOpen, settings.SidebarLayout);
         TraceRootInput();
         UpdateUi();
     }
@@ -270,6 +270,7 @@ public sealed partial class MainWindow : Window
 
         HideMessage();
         var renderer = EnsureGraphics();
+        PrepareCrossFade(path);
         CloseCurrent();
 
         _currentPath = path;
@@ -338,6 +339,7 @@ public sealed partial class MainWindow : Window
                 FocusViewer();
                 // 前のファイルのGPUメモリを返す（新しい表示内容は保持される）
                 _renderer?.TrimMemory();
+                StartCrossFade();
             }
         }
     }
@@ -596,6 +598,7 @@ public sealed partial class MainWindow : Window
         _positionTimer.Stop();
         _hideTimer.Stop();
         _slideTimer?.Stop();
+        StopCrossFadeAnimation();
         UnregisterForPrinting();
         ReleaseGraphics();
     }

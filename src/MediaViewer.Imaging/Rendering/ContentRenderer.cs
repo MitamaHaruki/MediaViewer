@@ -40,6 +40,12 @@ public sealed class ContentRenderer : IDisposable
     private float _viewScale = 1f;
     private bool _disposed;
 
+    // クロスフェード：切り替え前の画面の写し（_fadeFrom）を、不透明度を下げながら新しい画面の上に重ねる。
+    // _fadeTo は新しい画面の写しで、大きな画像の色変換をフェード中に毎フレームやり直さないためのもの。
+    private ID2D1Bitmap1? _fadeFrom;
+    private ID2D1Bitmap1? _fadeTo;
+    private float _fadeFromOpacity;
+
     public ContentRenderer(GraphicsDevice device)
     {
         _device = device;
@@ -104,6 +110,8 @@ public sealed class ContentRenderer : IDisposable
             pixelHeight = Math.Max(1, pixelHeight);
             if (pixelWidth != _width || pixelHeight != _height)
             {
+                // 写しの大きさが合わなくなるため、フェードはやめて新しい画面をそのまま出す
+                ReleaseCrossFade();
                 _ctx.Target = null;
                 _target?.Dispose();
                 _target = null;
@@ -125,6 +133,7 @@ public sealed class ContentRenderer : IDisposable
             if (Equals(display, _display)) return;
             _display = display;
             RebuildPipeline();
+            InvalidateFadeTarget();
         }
     }
 
@@ -140,6 +149,7 @@ public sealed class ContentRenderer : IDisposable
             _sourceColor = color;
             _upright = upright;
             RebuildPipeline();
+            InvalidateFadeTarget();
         }
     }
 
@@ -148,8 +158,10 @@ public sealed class ContentRenderer : IDisposable
     {
         lock (_gate)
         {
+            var view = Matrix3x2.CreateScale(scale) * Matrix3x2.CreateTranslation(offsetX, offsetY);
+            if (view != _view) InvalidateFadeTarget();
             _viewScale = scale;
-            _view = Matrix3x2.CreateScale(scale) * Matrix3x2.CreateTranslation(offsetX, offsetY);
+            _view = view;
         }
     }
 
@@ -198,18 +210,9 @@ public sealed class ContentRenderer : IDisposable
 
     private bool TryDraw()
     {
-        var white = _display.SdrWhiteScale;
-        var bg = BackgroundLinear * white;
         _ctx.Target = _target;
         _ctx.BeginDraw();
-        _ctx.Transform = Matrix3x2.Identity;
-        _ctx.Clear(new Color4(bg, bg, bg, 1f));
-        if (_pipeline is not null)
-        {
-            _ctx.Transform = _upright * _view;
-            _ctx.DrawImage(_pipeline.Output, null, null, ChooseInterpolation(_viewScale), CompositeMode.SourceOver);
-            _ctx.Transform = Matrix3x2.Identity;
-        }
+        DrawScene(includeFade: true);
         var hr = _ctx.EndDraw();
         if (hr.Failure)
         {
@@ -224,6 +227,112 @@ public sealed class ContentRenderer : IDisposable
             return false;
         }
         return true;
+    }
+
+    /// <summary>今の描画先へ、背景・コンテンツ（と、フェード中なら前の画面の写し）を描く。BeginDraw／EndDraw は呼び出し側で行う。</summary>
+    private void DrawScene(bool includeFade)
+    {
+        _ctx.Transform = Matrix3x2.Identity;
+        var bg = BackgroundLinear * _display.SdrWhiteScale;
+        _ctx.Clear(new Color4(bg, bg, bg, 1f));
+        if (includeFade && _fadeTo is not null)
+        {
+            _ctx.DrawBitmap(_fadeTo, 1f, BitmapInterpolationMode.NearestNeighbor);
+        }
+        else if (_pipeline is not null)
+        {
+            _ctx.Transform = _upright * _view;
+            _ctx.DrawImage(_pipeline.Output, null, null, ChooseInterpolation(_viewScale), CompositeMode.SourceOver);
+            _ctx.Transform = Matrix3x2.Identity;
+        }
+        if (includeFade && _fadeFrom is not null && _fadeFromOpacity > 0f)
+        {
+            // 写しは全面が不透明なので、重ねた結果は「前の画面×不透明度＋新しい画面×（1−不透明度）」になる（線形の光の量で混ぜる）
+            _ctx.DrawBitmap(_fadeFrom, _fadeFromOpacity, BitmapInterpolationMode.NearestNeighbor);
+        }
+    }
+
+    // ---- クロスフェード ----
+
+    /// <summary>
+    /// クロスフェードの始まり：今の画面を写し取り、<see cref="EndCrossFade"/> まで新しい画面の上に重ねて描く。
+    /// 重ねる不透明度の初期値は 1（前の画面のまま）なので、次の画像を読み込んでいる間も前の画面が見え続ける。
+    /// 写し取れなかった場合は false（フェードせずに切り替える）。
+    /// </summary>
+    public bool BeginCrossFade()
+    {
+        lock (_gate)
+        {
+            if (_disposed || _swapChain is null || _target is null || IsDeviceLost) return false;
+            var snapshot = CreateFrameBitmap();
+            if (!DrawTo(snapshot, includeFade: true))
+            {
+                snapshot.Dispose();
+                return false;
+            }
+            ReleaseCrossFade();
+            _fadeFrom = snapshot;
+            _fadeFromOpacity = 1f;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// 前の画面を重ねる不透明度（1 = 前の画面、0 = 新しい画面）。初めて呼んだときに新しい画面も写し取り、
+    /// 以後は2枚の写しを重ねるだけにする。
+    /// </summary>
+    public void SetCrossFade(float fromOpacity)
+    {
+        lock (_gate)
+        {
+            if (_fadeFrom is null) return;
+            _fadeFromOpacity = Math.Clamp(fromOpacity, 0f, 1f);
+            if (_fadeTo is not null || _disposed || _target is null || IsDeviceLost) return;
+            var next = CreateFrameBitmap();
+            if (DrawTo(next, includeFade: false)) _fadeTo = next;
+            else next.Dispose();
+        }
+    }
+
+    /// <summary>クロスフェードを終え、写しを解放する。</summary>
+    public void EndCrossFade()
+    {
+        lock (_gate) ReleaseCrossFade();
+    }
+
+    private ID2D1Bitmap1 CreateFrameBitmap() =>
+        _ctx.CreateBitmap(new SizeI(_width, _height), IntPtr.Zero, 0, new BitmapProperties1(
+            new PixelFormat(SwapChainFormat, Vortice.DCommon.AlphaMode.Premultiplied),
+            96, 96,
+            BitmapOptions.Target));
+
+    private bool DrawTo(ID2D1Bitmap1 bitmap, bool includeFade)
+    {
+        _ctx.Target = bitmap;
+        _ctx.BeginDraw();
+        DrawScene(includeFade);
+        var hr = _ctx.EndDraw();
+        _ctx.Target = _target;
+        if (hr.Failure)
+        {
+            CheckDeviceLost(hr.Code);
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>表示内容・倍率・表示先が変わったら、新しい画面の写しを作り直す（次の <see cref="SetCrossFade"/> で）。</summary>
+    private void InvalidateFadeTarget()
+    {
+        _fadeTo?.Dispose();
+        _fadeTo = null;
+    }
+
+    private void ReleaseCrossFade()
+    {
+        _fadeFrom?.Dispose();
+        _fadeFrom = null;
+        InvalidateFadeTarget();
     }
 
     /// <summary>
@@ -310,6 +419,7 @@ public sealed class ContentRenderer : IDisposable
         {
             if (_disposed) return;
             _disposed = true;
+            ReleaseCrossFade();
             _pipeline?.Dispose();
             _ctx.Target = null;
             _target?.Dispose();

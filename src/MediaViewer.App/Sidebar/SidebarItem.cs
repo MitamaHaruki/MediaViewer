@@ -2,6 +2,7 @@ using System.ComponentModel;
 using MediaViewer.Core.Media;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using Windows.Storage;
 
 namespace MediaViewer.App.Sidebar;
 
@@ -42,8 +43,26 @@ public sealed partial class SidebarItem : INotifyPropertyChanged
 
     public Visibility PlaceholderVisibility => _thumbnail is null ? Visibility.Visible : Visibility.Collapsed;
 
-    /// <summary>サムネイルの読み込みを一度だけ行うための印。</summary>
-    internal bool ThumbnailRequested { get; set; }
+    /// <summary>今のサムネイルを作ったときの大きさ（長辺のピクセル数。なければ 0）。</summary>
+    internal int ThumbnailPixelSize { get; set; }
+
+    /// <summary>読み込み中（または読み込めなかった）サムネイルの大きさ。同じ大きさで何度も読み込まないための印。</summary>
+    internal int RequestedPixelSize { get; set; }
+
+    private Task<StorageFile>? _storageFile;
+
+    /// <summary>
+    /// ドラッグで外へ渡すファイルの情報を先に用意する。ドラッグの開始（指やマウスが少し動いたとき）までに
+    /// 用意できていれば、そのまま渡せる。
+    /// </summary>
+    internal Task<StorageFile> GetStorageFileAsync()
+    {
+        if (_storageFile is null || _storageFile.IsFaulted || _storageFile.IsCanceled)
+        {
+            _storageFile = StorageFile.GetFileFromPathAsync(FilePath).AsTask();
+        }
+        return _storageFile;
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 }
